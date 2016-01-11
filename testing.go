@@ -26,7 +26,7 @@ type HTTPTesting struct {
 }
 
 // NewHTTPTesting returns an initialized HTTPTesting ready for using
-func NewHTTPTesting(host string, isHttps bool) *HTTPTesting {
+func New(host string, isHttps bool) *HTTPTesting {
 	jar, _ := cookiejar.New(nil)
 
 	// adjust host
