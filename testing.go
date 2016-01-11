@@ -123,7 +123,7 @@ func (test *HTTPTesting) NewFilterRequest(t *testing.T, request *http.Request, f
 	var err error
 
 	client := &http.Client{
-		Transport: newTransporter(filter),
+		Transport: newTransport(filter),
 	}
 
 	test.Response, err = client.Do(request)
