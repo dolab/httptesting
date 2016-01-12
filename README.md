@@ -4,14 +4,20 @@
 
 HTTP testing client of golang.
 
-## Example
+## Installation
+
+```bash
+$ go get github.com/dolab/httptesting
+```
+
+## Getting Started
 
 ```go
 package main
 
 import (
-    "testing"
     "net/http"
+    "testing"
 
     "github.com/dolab/httptesting"
 )
