@@ -1,6 +1,8 @@
 # httptesting
 
-HTTP testing framework of golang.
+[![Build Status](https://travis-ci.org/dolab/httptesting.svg?branch=master)](https://travis-ci.org/dolab/httptesting)
+
+HTTP testing client of golang.
 
 ## Example
 
