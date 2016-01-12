@@ -1,6 +1,6 @@
 # httptesting
 
-[![Build Status](https://travis-ci.org/dolab/httptesting.svg?branch=master)](https://travis-ci.org/dolab/httptesting)
+[![Build Status](https://travis-ci.org/dolab/httptesting.svg?branch=master&style=flat)](https://travis-ci.org/dolab/httptesting)
 
 HTTP testing client of golang.
 
