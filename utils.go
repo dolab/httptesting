@@ -11,7 +11,7 @@ import (
 )
 
 // Get issues a GET request to the given path and stores the result in Response and ResponseBody.
-func (test *HTTPTesting) Get(t *testing.T, path string, params ...url.Values) {
+func (test *Client) Get(t *testing.T, path string, params ...url.Values) {
 	test.t = t
 
 	var (
@@ -32,7 +32,7 @@ func (test *HTTPTesting) Get(t *testing.T, path string, params ...url.Values) {
 }
 
 // Head issues a HEAD request to the given path and stores the result in Response and ResponseBody.
-func (test *HTTPTesting) Head(t *testing.T, path string, params ...url.Values) {
+func (test *Client) Head(t *testing.T, path string, params ...url.Values) {
 	test.t = t
 
 	var (
@@ -53,7 +53,7 @@ func (test *HTTPTesting) Head(t *testing.T, path string, params ...url.Values) {
 }
 
 // Options issues an OPTIONS request to the given path and stores the result in Response and ResponseBody.
-func (test *HTTPTesting) Options(t *testing.T, path string, params ...url.Values) {
+func (test *Client) Options(t *testing.T, path string, params ...url.Values) {
 	test.t = t
 
 	var (
@@ -75,20 +75,20 @@ func (test *HTTPTesting) Options(t *testing.T, path string, params ...url.Values
 
 // Put issues a PUT request to the given path, sending request with specified Content-Type header, and
 // stores the result in Response and ResponseBody.
-func (test *HTTPTesting) Put(t *testing.T, path, contentType string, data ...interface{}) {
+func (test *Client) Put(t *testing.T, path, contentType string, data ...interface{}) {
 	test.Invoke(t, "PUT", path, contentType, data...)
 }
 
 // PutForm issues a PUT request to the given path with Content-Type: application/x-www-form-urlencoded header, and
 // stores the result in Response and ResponseBody.
-func (test *HTTPTesting) PutForm(t *testing.T, path string, data interface{}) {
+func (test *Client) PutForm(t *testing.T, path string, data interface{}) {
 	test.Invoke(t, "PUT", path, "application/x-www-form-urlencoded", data)
 }
 
 // PutJSON issues a PUT request to the given path with Content-Type: application/json header, and
 // stores the result in Response and ResponseBody.
 // It will encode data by json.Marshal before making request.
-func (test *HTTPTesting) PutJSON(t *testing.T, path string, data interface{}) {
+func (test *Client) PutJSON(t *testing.T, path string, data interface{}) {
 	b, err := json.Marshal(data)
 	if err != nil {
 		t.Fatal(err)
@@ -100,7 +100,7 @@ func (test *HTTPTesting) PutJSON(t *testing.T, path string, data interface{}) {
 // PutXML issues a PUT request to the given path with Content-Type: text/xml header, and
 // stores the result in Response and ResponseBody.
 // It will encode data by xml.Marshal before making request.
-func (test *HTTPTesting) PutXML(t *testing.T, path string, data interface{}) {
+func (test *Client) PutXML(t *testing.T, path string, data interface{}) {
 	b, err := xml.Marshal(data)
 	if err != nil {
 		t.Fatal(err)
@@ -111,20 +111,20 @@ func (test *HTTPTesting) PutXML(t *testing.T, path string, data interface{}) {
 
 // Post issues a POST request to the given path, sending request with specified Content-Type header, and
 // stores the result in Response and ResponseBody.
-func (test *HTTPTesting) Post(t *testing.T, path, contentType string, data ...interface{}) {
+func (test *Client) Post(t *testing.T, path, contentType string, data ...interface{}) {
 	test.Invoke(t, "POST", path, contentType, data...)
 }
 
 // PostForm issues a POST request to the given path with Content-Type: application/x-www-form-urlencoded header, and
 // stores the result in Response and ResponseBody.
-func (test *HTTPTesting) PostForm(t *testing.T, path string, data interface{}) {
+func (test *Client) PostForm(t *testing.T, path string, data interface{}) {
 	test.Invoke(t, "POST", path, "application/x-www-form-urlencoded", data)
 }
 
 // PostJSON issues a POST request to the given path with Content-Type: application/json header, and
 // stores the result in Response and ResponseBody.
 // It will encode data by json.Marshal before making request.
-func (test *HTTPTesting) PostJSON(t *testing.T, path string, data interface{}) {
+func (test *Client) PostJSON(t *testing.T, path string, data interface{}) {
 	b, err := json.Marshal(data)
 	if err != nil {
 		t.Fatal(err)
@@ -136,7 +136,7 @@ func (test *HTTPTesting) PostJSON(t *testing.T, path string, data interface{}) {
 // PostXML issues a POST request to the given path with Content-Type: text/xml header, and
 // stores the result in Response and ResponseBody.
 // It will encode data by xml.Marshal before making request.
-func (test *HTTPTesting) PostXML(t *testing.T, path string, data interface{}) {
+func (test *Client) PostXML(t *testing.T, path string, data interface{}) {
 	b, err := xml.Marshal(data)
 	if err != nil {
 		t.Fatal(err)
@@ -147,20 +147,20 @@ func (test *HTTPTesting) PostXML(t *testing.T, path string, data interface{}) {
 
 // Patch issues a PATCH request to the given path, sending request with specified Content-Type header, and
 // stores the result in Response and ResponseBody.
-func (test *HTTPTesting) Patch(t *testing.T, path, contentType string, data ...interface{}) {
+func (test *Client) Patch(t *testing.T, path, contentType string, data ...interface{}) {
 	test.Invoke(t, "PATCH", path, contentType, data...)
 }
 
 // PatchForm issues a PATCH request to the given path with Content-Type: application/x-www-form-urlencoded header, and
 // stores the result in Response and ResponseBody.
-func (test *HTTPTesting) PatchForm(t *testing.T, path string, data interface{}) {
+func (test *Client) PatchForm(t *testing.T, path string, data interface{}) {
 	test.Invoke(t, "PATCH", path, "application/x-www-form-urlencoded", data)
 }
 
 // PatchJSON issues a PATCH request to the given path with with Content-Type: application/json header, and
 // stores the result in Response and ResponseBody.
 // It will encode data by json.Marshal before making request.
-func (test *HTTPTesting) PatchJSON(t *testing.T, path string, data interface{}) {
+func (test *Client) PatchJSON(t *testing.T, path string, data interface{}) {
 	b, err := json.Marshal(data)
 	if err != nil {
 		t.Fatal(err)
@@ -172,7 +172,7 @@ func (test *HTTPTesting) PatchJSON(t *testing.T, path string, data interface{}) 
 // PatchXML issues a PATCH request to the given path with Content-Type: text/xml header, and
 // stores the result in Response and ResponseBody.
 // It will encode data by xml.Marshal before making request.
-func (test *HTTPTesting) PatchXML(t *testing.T, path string, data interface{}) {
+func (test *Client) PatchXML(t *testing.T, path string, data interface{}) {
 	b, err := xml.Marshal(data)
 	if err != nil {
 		t.Fatal(err)
@@ -183,20 +183,20 @@ func (test *HTTPTesting) PatchXML(t *testing.T, path string, data interface{}) {
 
 // Delete issues a DELETE request to the given path, sending request with specified Content-Type header, and
 // stores the result in Response and ResponseBody.
-func (test *HTTPTesting) Delete(t *testing.T, path, contentType string, data ...interface{}) {
+func (test *Client) Delete(t *testing.T, path, contentType string, data ...interface{}) {
 	test.Invoke(t, "DELETE", path, contentType, data...)
 }
 
 // DeleteForm issues a DELETE request to the given path with Content-Type: application/x-www-form-urlencoded header, and
 // stores the result in Response and ResponseBody.
-func (test *HTTPTesting) DeleteForm(t *testing.T, path string, data interface{}) {
+func (test *Client) DeleteForm(t *testing.T, path string, data interface{}) {
 	test.Invoke(t, "DELETE", path, "application/x-www-form-urlencoded", data)
 }
 
 // DeleteJSON issues a DELETE request to the given path with Content-Type: application/json header, and
 // stores the result in Response and ResponseBody.
 // It will encode data by json.Marshal before making request.
-func (test *HTTPTesting) DeleteJSON(t *testing.T, path string, data interface{}) {
+func (test *Client) DeleteJSON(t *testing.T, path string, data interface{}) {
 	b, err := json.Marshal(data)
 	if err != nil {
 		t.Fatal(err)
@@ -208,7 +208,7 @@ func (test *HTTPTesting) DeleteJSON(t *testing.T, path string, data interface{})
 // DeleteXML issues a DELETE request to the given path with Content-Type: text/xml header, and
 // stores the result in Response and ResponseBody.
 // It will encode data by xml.Marshal before making request.
-func (test *HTTPTesting) DeleteXML(t *testing.T, path string, data interface{}) {
+func (test *Client) DeleteXML(t *testing.T, path string, data interface{}) {
 	b, err := xml.Marshal(data)
 	if err != nil {
 		t.Fatal(err)
@@ -219,7 +219,7 @@ func (test *HTTPTesting) DeleteXML(t *testing.T, path string, data interface{}) 
 
 // Invoke issues a HTTP request to the given path with specified method and content type header, and
 // stores the result in Response and ResponseBody.
-func (test *HTTPTesting) Invoke(t *testing.T, method, path, contentType string, data ...interface{}) {
+func (test *Client) Invoke(t *testing.T, method, path, contentType string, data ...interface{}) {
 	test.t = t
 
 	var (

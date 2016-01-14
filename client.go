@@ -15,7 +15,7 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-type HTTPTesting struct {
+type Client struct {
 	Client       *http.Client
 	Response     *http.Response
 	ResponseBody []byte
@@ -25,8 +25,8 @@ type HTTPTesting struct {
 	https bool
 }
 
-// NewHTTPTesting returns an initialized HTTPTesting ready for using
-func New(host string, isHttps bool) *HTTPTesting {
+// NewClient returns an initialized Client ready for using
+func New(host string, isHttps bool) *Client {
 	jar, _ := cookiejar.New(nil)
 
 	// adjust host
@@ -37,7 +37,7 @@ func New(host string, isHttps bool) *HTTPTesting {
 		}
 	}
 
-	return &HTTPTesting{
+	return &Client{
 		Client: &http.Client{Jar: jar},
 		host:   host,
 		https:  isHttps,
@@ -45,7 +45,7 @@ func New(host string, isHttps bool) *HTTPTesting {
 }
 
 // Host returns the host and port of the server, e.g. "127.0.0.1:9090"
-func (test *HTTPTesting) Host() string {
+func (test *Client) Host() string {
 	if test.host[0] == ':' {
 		return "127.0.0.1" + test.host
 	}
@@ -55,7 +55,7 @@ func (test *HTTPTesting) Host() string {
 
 // Url returns the abs http/https URL of the resource, e.g. "http://127.0.0.1:9090/status".
 // The scheme is set to https if http.ssl is set to true in the configuration.
-func (test *HTTPTesting) Url(path string) string {
+func (test *Client) Url(path string) string {
 	if test.https {
 		return "https://" + test.Host() + path
 	}
@@ -64,19 +64,19 @@ func (test *HTTPTesting) Url(path string) string {
 }
 
 // WebsocketUrl returns the abs websocket URL of the resource, e.g. "ws://127.0.0.1:9090/status"
-func (test *HTTPTesting) WebsocketUrl(path string) string {
+func (test *Client) WebsocketUrl(path string) string {
 	return "ws://" + test.Host() + path
 }
 
 // Cookies returns cookies related with the host
-func (test *HTTPTesting) Cookies() []*http.Cookie {
+func (test *Client) Cookies() []*http.Cookie {
 	u, _ := url.Parse(test.Url("/"))
 
 	return test.Client.Jar.Cookies(u)
 }
 
 // SetCookie sets cookies with the host
-func (test *HTTPTesting) SetCookies(cookies []*http.Cookie) {
+func (test *Client) SetCookies(cookies []*http.Cookie) {
 	u, _ := url.Parse(test.Url("/"))
 
 	test.Client.Jar.SetCookies(u, cookies)
@@ -85,7 +85,7 @@ func (test *HTTPTesting) SetCookies(cookies []*http.Cookie) {
 // NewRequest issues any request and read the response.
 // If successful, the caller may examine the Response and ResponseBody properties.
 // NOTE: You have to manage session / cookie data manually.
-func (test *HTTPTesting) NewRequest(t *testing.T, request *http.Request) {
+func (test *Client) NewRequest(t *testing.T, request *http.Request) {
 	test.t = t
 
 	var err error
@@ -106,7 +106,7 @@ func (test *HTTPTesting) NewRequest(t *testing.T, request *http.Request) {
 // NewSessionRequest issues any request with session / cookie and read the response.
 // If successful, the caller may examine the Response and ResponseBody properties.
 // NOTE: Session data will be added to the request cookies for you.
-func (test *HTTPTesting) NewSessionRequest(t *testing.T, request *http.Request) {
+func (test *Client) NewSessionRequest(t *testing.T, request *http.Request) {
 	for _, cookie := range test.Client.Jar.Cookies(request.URL) {
 		request.AddCookie(cookie)
 	}
@@ -117,7 +117,7 @@ func (test *HTTPTesting) NewSessionRequest(t *testing.T, request *http.Request) 
 // NewFilterRequest issues any request with TransportFiler and read the response.
 // If successful, the caller may examine the Response and ResponseBody properties.
 // NOTE: It returns error without apply HTTP request when transport filter returned an error.
-func (test *HTTPTesting) NewFilterRequest(t *testing.T, request *http.Request, filter TransportFilter) {
+func (test *Client) NewFilterRequest(t *testing.T, request *http.Request, filter TransportFilter) {
 	test.t = t
 
 	var err error
@@ -141,7 +141,7 @@ func (test *HTTPTesting) NewFilterRequest(t *testing.T, request *http.Request, f
 
 // NewMultipartRequest issues a multipart request for the method & fields given and read the response.
 // If successful, the caller may examine the Response and ResponseBody properties.
-func (test *HTTPTesting) NewMultipartRequest(t *testing.T, method, path, filename string, file interface{}, fields ...map[string]string) {
+func (test *Client) NewMultipartRequest(t *testing.T, method, path, filename string, file interface{}, fields ...map[string]string) {
 	test.t = t
 
 	var buf bytes.Buffer
@@ -199,7 +199,7 @@ func (test *HTTPTesting) NewMultipartRequest(t *testing.T, method, path, filenam
 }
 
 // NewWebsocket creates a websocket connection to the given path and returns the connection
-func (test *HTTPTesting) NewWebsocket(t *testing.T, path string) *websocket.Conn {
+func (test *Client) NewWebsocket(t *testing.T, path string) *websocket.Conn {
 	origin := test.WebsocketUrl("/")
 	target := test.WebsocketUrl(path)
 

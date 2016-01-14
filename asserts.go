@@ -9,27 +9,27 @@ import (
 )
 
 // AssertOK tests that the response status code is 200.
-func (test *HTTPTesting) AssertOK() {
+func (test *Client) AssertOK() {
 	test.AssertStatus(http.StatusOK)
 }
 
 // AssertNotFound tests that the response status code is 404.
-func (test *HTTPTesting) AssertNotFound() {
+func (test *Client) AssertNotFound() {
 	test.AssertStatus(http.StatusNotFound)
 }
 
 // AssertStatus tests that the response status code is equal with the given.
-func (test *HTTPTesting) AssertStatus(status int) {
+func (test *Client) AssertStatus(status int) {
 	assert.EqualValues(test.t, status, test.Response.StatusCode, "Expected response status code "+strconv.Itoa(status)+", but got "+test.Response.Status+".")
 }
 
 // AssertContentType tests that the response includes Content-Type header with the given value.
-func (test *HTTPTesting) AssertContentType(contentType string) {
+func (test *Client) AssertContentType(contentType string) {
 	test.AssertHeader("Content-Type", contentType)
 }
 
 // AssertHeader tests that the response includes named header with the given value.
-func (test *HTTPTesting) AssertHeader(name, value string) {
+func (test *Client) AssertHeader(name, value string) {
 	name = http.CanonicalHeaderKey(name)
 	actual := test.Response.Header.Get(name)
 
@@ -37,7 +37,7 @@ func (test *HTTPTesting) AssertHeader(name, value string) {
 }
 
 // AssertExistHeader tests that the response includes named header.
-func (test *HTTPTesting) AssertExistHeader(name string) {
+func (test *Client) AssertExistHeader(name string) {
 	name = http.CanonicalHeaderKey(name)
 
 	_, ok := test.Response.Header[name]
@@ -47,7 +47,7 @@ func (test *HTTPTesting) AssertExistHeader(name string) {
 }
 
 // AssertNotExistHeader tests that the response does not include named header.
-func (test *HTTPTesting) AssertNotExistHeader(name string) {
+func (test *Client) AssertNotExistHeader(name string) {
 	name = http.CanonicalHeaderKey(name)
 
 	_, ok := test.Response.Header[name]
@@ -57,27 +57,27 @@ func (test *HTTPTesting) AssertNotExistHeader(name string) {
 }
 
 // AssertEmpty tests that the response is empty.
-func (test *HTTPTesting) AssertEmpty() {
+func (test *Client) AssertEmpty() {
 	assert.Empty(test.t, string(test.ResponseBody))
 }
 
 // AssertNotEmpty tests that the response is not empty.
-func (test *HTTPTesting) AssertNotEmpty() {
+func (test *Client) AssertNotEmpty() {
 	assert.NotEmpty(test.t, string(test.ResponseBody))
 }
 
 // AssertContains tests that the response contains the given string.
-func (test *HTTPTesting) AssertContains(s string) {
+func (test *Client) AssertContains(s string) {
 	assert.Contains(test.t, string(test.ResponseBody), s, "Expected response body contains "+s+".")
 }
 
 // AssertNotContains tests that the response does not contain the given string.
-func (test *HTTPTesting) AssertNotContains(s string) {
+func (test *Client) AssertNotContains(s string) {
 	assert.NotContains(test.t, string(test.ResponseBody), s, "Expected response body does not contain "+s+".")
 }
 
 // AssertMatch tests that the response matches the given regular expression.
-func (test *HTTPTesting) AssertMatch(re string) {
+func (test *Client) AssertMatch(re string) {
 	r := regexp.MustCompile(re)
 
 	if !r.Match(test.ResponseBody) {
@@ -86,7 +86,7 @@ func (test *HTTPTesting) AssertMatch(re string) {
 }
 
 // AssertNotMatch tests that the response does not match the given regular expression.
-func (test *HTTPTesting) AssertNotMatch(re string) {
+func (test *Client) AssertNotMatch(re string) {
 	r := regexp.MustCompile(re)
 
 	if r.Match(test.ResponseBody) {

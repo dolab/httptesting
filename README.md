@@ -22,7 +22,7 @@ import (
     "github.com/dolab/httptesting"
 )
 
-func Test_HTTPTesting(t *testing.T) {
+func Test_Client(t *testing.T) {
     host := "https://example.com"
     test := httptesting.New(host, true)
 
@@ -31,7 +31,7 @@ func Test_HTTPTesting(t *testing.T) {
     test.AssertNotEmpty()
 }
 
-func Test_HTTPTestingWithCustomRequest(t *testing.T) {
+func Test_ClientWithCustomRequest(t *testing.T) {
     r, _ := http.NewRequest("HEAD", "https://example.com", nil)
     r.Header.Add("X-Custom-Header", "custom-header")
 
