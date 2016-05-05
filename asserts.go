@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/golib/assert"
 )
 
 // AssertOK tests that the response status code is 200.
