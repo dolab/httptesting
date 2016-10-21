@@ -4,7 +4,9 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
+	"strings"
 
+	"github.com/buger/jsonparser"
 	"github.com/golib/assert"
 )
 
@@ -92,4 +94,13 @@ func (test *Client) AssertNotMatch(re string) {
 	if r.Match(test.ResponseBody) {
 		test.t.Errorf("Expected response body does not match regexp %s", re)
 	}
+}
+
+func (test *Client) AssertContainsJSON(key, value string) {
+	actual, err := jsonparser.GetString(test.ResponseBody, strings.Split(key, ".")...)
+	if err != nil {
+		test.t.Errorf("Expected response body contains json key %s with %s, but got Errr(%v)", key, value, err)
+	}
+
+	assert.EqualValues(test.t, value, actual, "Expected response body contains json key "+key+" with "+value+", but got "+actual+".")
 }
