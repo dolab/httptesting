@@ -27,7 +27,11 @@ func Test_Client(t *testing.T) {
     test := httptesting.New(host, true)
 
     test.Get("/")
+
+    // verify http response status
     test.AssertOK()
+
+    // verify http response body
     test.AssertNotEmpty()
 }
 
@@ -36,10 +40,45 @@ func Test_ClientWithCustomRequest(t *testing.T) {
     r.Header.Add("X-Custom-Header", "custom-header")
 
     test := httptesting.New("", true)
-
     test.NewRequest(r)
+
+    // verify http response status
     test.AssertOK()
+
+    // verify http response body
     test.AssertEmpty()
+}
+```
+
+### Advantage Usage
+
+```go
+package main
+
+import (
+	"testing"
+)
+
+func Test_RequestClient(t *testing.T) {
+    host := "https://example.com"
+    test := httptesting.New(host, true)
+    
+	request := client.New(t)
+	request.WithHeader("X-Mock-Client", "httptesting")
+
+	request.Get("/api/json", nil)
+
+    // verify http response status
+	request.AssertOK()
+
+    // verify http response header
+    request.AssertHeader("X-Mock-Client", "httptesting")
+
+    // verify http response body with json format
+	request.AssertContainsJSON("user.name", "httptesting")
+
+    // use regexp for custom matcher
+    request.AssertMatch("user.*")
 }
 ```
 
