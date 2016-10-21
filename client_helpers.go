@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"testing"
@@ -12,65 +13,35 @@ import (
 
 // Get issues a GET request to the given path and stores the result in Response and ResponseBody.
 func (test *Client) Get(t *testing.T, path string, params ...url.Values) {
-	test.t = t
-
-	var (
-		request *http.Request
-		err     error
-	)
+	contentType := "text/html"
 
 	if len(params) == 0 {
-		request, err = http.NewRequest("GET", test.Url(path), nil)
+		test.Invoke(t, "GET", path, contentType)
 	} else {
-		request, err = http.NewRequest("GET", test.Url(path+"?"+params[0].Encode()), nil)
+		test.Invoke(t, "GET", path, contentType, params[0])
 	}
-	if err != nil {
-		t.Fatalf("GET %s: %#v\n", path, err)
-	}
-
-	test.NewSessionRequest(t, request)
 }
 
 // Head issues a HEAD request to the given path and stores the result in Response and ResponseBody.
 func (test *Client) Head(t *testing.T, path string, params ...url.Values) {
-	test.t = t
-
-	var (
-		request *http.Request
-		err     error
-	)
+	contentType := "text/html"
 
 	if len(params) == 0 {
-		request, err = http.NewRequest("HEAD", test.Url(path), nil)
+		test.Invoke(t, "HEAD", path, contentType)
 	} else {
-		request, err = http.NewRequest("HEAD", test.Url(path+"?"+params[0].Encode()), nil)
+		test.Invoke(t, "HEAD", path, contentType, params[0])
 	}
-	if err != nil {
-		t.Fatalf("HEAD %s: %#v\n", path, err)
-	}
-
-	test.NewSessionRequest(t, request)
 }
 
 // Options issues an OPTIONS request to the given path and stores the result in Response and ResponseBody.
 func (test *Client) Options(t *testing.T, path string, params ...url.Values) {
-	test.t = t
-
-	var (
-		request *http.Request
-		err     error
-	)
+	contentType := "text/html"
 
 	if len(params) == 0 {
-		request, err = http.NewRequest("OPTIONS", test.Url(path), nil)
+		test.Invoke(t, "OPTIONS", path, contentType)
 	} else {
-		request, err = http.NewRequest("OPTIONS", test.Url(path+"?"+params[0].Encode()), nil)
+		test.Invoke(t, "OPTIONS", path, contentType, params[0])
 	}
-	if err != nil {
-		t.Fatalf("OPTIONS %s: %#v\n", path, err)
-	}
-
-	test.NewSessionRequest(t, request)
 }
 
 // Put issues a PUT request to the given path, sending request with specified Content-Type header, and
@@ -252,9 +223,27 @@ func (test *Client) Invoke(t *testing.T, method, path, contentType string, data 
 
 			reader = bytes.NewBufferString(params.Encode())
 
+		default:
+			b, _ := json.Marshal(body)
+
+			reader = bytes.NewBuffer(b)
+			contentType = "application/json"
 		}
 
-		request, err = http.NewRequest(method, test.Url(path), reader)
+		switch method {
+		case "GET", "HEAD", "OPTIONS": // apply request params to url
+			urlStr := test.Url(path)
+
+			data, _ := ioutil.ReadAll(reader)
+			if len(data) != 0 {
+				urlStr += "?" + string(data)
+			}
+
+			request, err = http.NewRequest(method, urlStr, nil)
+
+		default:
+			request, err = http.NewRequest(method, test.Url(path), reader)
+		}
 	}
 
 	if err != nil {
