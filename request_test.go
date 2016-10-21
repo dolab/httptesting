@@ -1,7 +1,6 @@
 package httptesting
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -16,8 +15,6 @@ func Test_RequestClient(t *testing.T) {
 	server := newMockServer(method, uri, func(w http.ResponseWriter, r *http.Request) {
 		assertion.Equal(method, r.Method)
 		assertion.Equal("/request/client", r.RequestURI)
-
-		fmt.Printf(">>> %#v\n", r.Header)
 
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(r.Header.Get("X-Mock-Client")))
