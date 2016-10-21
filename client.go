@@ -82,6 +82,7 @@ func (test *Client) SetCookies(cookies []*http.Cookie) {
 	test.Client.Jar.SetCookies(u, cookies)
 }
 
+// New returns a RequestClient which has more customlization!
 func (test *Client) New(t *testing.T) *RequestClient {
 	client := NewRequestClient(test)
 	client.t = t

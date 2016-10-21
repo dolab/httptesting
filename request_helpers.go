@@ -256,5 +256,5 @@ func (client *RequestClient) Invoke(method, urlpath, contentType string, data ..
 		}
 	}
 
-	client.NewSessionRequest(client.t, request)
+	client.NewSessionRequest(request)
 }
