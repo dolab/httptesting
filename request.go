@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 )
@@ -255,7 +256,20 @@ func (client *RequestClient) Invoke(method, urlpath, contentType string, data ..
 			contentType = "application/json"
 		}
 
-		request, err = http.NewRequest(method, client.Url(urlpath), reader)
+		switch method {
+		case "GET", "HEAD", "OPTIONS": // apply request params to url
+			urlStr := client.Url(urlpath)
+
+			data, _ := ioutil.ReadAll(reader)
+			if len(data) != 0 {
+				urlStr += "?" + string(data)
+			}
+
+			request, err = http.NewRequest(method, urlStr, nil)
+
+		default:
+			request, err = http.NewRequest(method, client.Url(urlpath), reader)
+		}
 	}
 
 	if err != nil {
