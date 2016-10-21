@@ -82,6 +82,13 @@ func (test *Client) SetCookies(cookies []*http.Cookie) {
 	test.Client.Jar.SetCookies(u, cookies)
 }
 
+func (test *Client) New(t *testing.T) *RequestClient {
+	client := NewRequestClient(test)
+	client.t = t
+
+	return client
+}
+
 // NewRequest issues any request and read the response.
 // If successful, the caller may examine the Response and ResponseBody properties.
 // NOTE: You have to manage session / cookie data manually.
