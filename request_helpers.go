@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strconv"
 )
 
 // Get issues a GET request to the given path and stores the result in Response and ResponseBody.
@@ -254,6 +255,11 @@ func (client *RequestClient) Invoke(method, urlpath, contentType string, data ..
 		for _, value := range values {
 			request.Header.Add(key, value)
 		}
+	}
+
+	contentLength, err := strconv.ParseInt(request.Header.Get("Content-Length"), 10, 64)
+	if err == nil {
+		request.ContentLength = contentLength
 	}
 
 	client.NewSessionRequest(request)

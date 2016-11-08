@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strconv"
 	"testing"
 )
 
@@ -251,6 +252,11 @@ func (test *Client) Invoke(t *testing.T, method, path, contentType string, data 
 	}
 
 	request.Header.Set("Content-Type", contentType)
+
+	contentLength, err := strconv.ParseInt(request.Header.Get("Content-Length"), 10, 64)
+	if err == nil {
+		request.ContentLength = contentLength
+	}
 
 	test.NewSessionRequest(t, request)
 }
