@@ -103,10 +103,12 @@ func (test *Client) NewRequest(t *testing.T, request *http.Request) {
 		t.Fatalf("[REQUEST] %s %s: %#v\n", request.Method, request.URL.Path, err.Error())
 	}
 
-	// Read response body
-	test.ResponseBody, err = ioutil.ReadAll(test.Response.Body)
-	if err != nil {
-		t.Fatalf("[RESPONSE] %s %s: %#v\n", request.Method, request.URL.Path, err)
+	// Read response body if not empty
+	if test.Response.ContentLength > 0 {
+		test.ResponseBody, err = ioutil.ReadAll(test.Response.Body)
+		if err != nil {
+			t.Fatalf("[RESPONSE] %s %s: %#v\n", request.Method, request.URL.Path, err)
+		}
 	}
 	test.Response.Body.Close()
 }

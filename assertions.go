@@ -104,3 +104,49 @@ func (test *Client) AssertContainsJSON(key, value string) {
 
 	assert.EqualValues(test.t, value, actual, "Expected response body contains json key "+key+" with "+value+", but got "+actual+".")
 }
+
+func (test *Client) AssertNotContainsJSON(key string) {
+	value, _, _, err := jsonparser.Get(test.ResponseBody, strings.Split(key, ".")...)
+	if err == nil {
+		test.t.Errorf("Expected response body does not contain json key %s, but got %s", key, string(value))
+	}
+}
+
+func (test *Client) AssertionContainsJSONInt(key string, value int) {
+	actual, err := jsonparser.GetInt(test.ResponseBody, strings.Split(key, ".")...)
+	if err != nil {
+		test.t.Errorf("Expected response body contains json key %s with %v, but got Errr(%v)", key, value, err)
+	}
+
+	valueStr := strconv.FormatInt(int64(value), 10)
+	actualStr := strconv.FormatInt(int64(actual), 10)
+	assert.EqualValues(test.t, value, actual, "Expected response body contains json key "+key+" with "+valueStr+", but got "+actualStr+".")
+}
+
+func (test *Client) AssertionContainsJSONFloat(key string, value float64) {
+	actual, err := jsonparser.GetFloat(test.ResponseBody, strings.Split(key, ".")...)
+	if err != nil {
+		test.t.Errorf("Expected response body contains json key %s with %v, but got Errr(%v)", key, value, err)
+	}
+
+	valueStr := strconv.FormatFloat(value, 'e', 3, 10)
+	actualStr := strconv.FormatFloat(actual, 'e', 3, 10)
+	assert.EqualValues(test.t, value, actual, "Expected response body contains json key "+key+" with "+valueStr+", but got "+actualStr+".")
+}
+
+func (test *Client) AssertionContainsJSONBool(key string, value bool) {
+	actual, err := jsonparser.GetBoolean(test.ResponseBody, strings.Split(key, ".")...)
+	if err != nil {
+		test.t.Errorf("Expected response body contains json key %s with %v, but got Errr(%v)", key, value, err)
+	}
+
+	valueStr := "true"
+	if !value {
+		valueStr = "false"
+	}
+	actualStr := "true"
+	if !actual {
+		actualStr = "false"
+	}
+	assert.EqualValues(test.t, value, actual, "Expected response body contains json key "+key+" with "+valueStr+", but got "+actualStr+".")
+}
