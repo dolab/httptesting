@@ -63,9 +63,11 @@ func Test_RequestClient(t *testing.T) {
     host := "https://example.com"
     test := httptesting.New(host, true)
     
-	request := client.New(t)
+	request := test.New(t)
 	request.WithHeader("X-Mock-Client", "httptesting")
 
+    // assume server response with following json data:
+    // {"user":{"name":"httptesting","age":3},"addresses":[{"name":"china"},{"name":"USA"}]}
 	request.Get("/api/json", nil)
 
     // verify http response status
@@ -76,6 +78,10 @@ func Test_RequestClient(t *testing.T) {
 
     // verify http response body with json format
 	request.AssertContainsJSON("user.name", "httptesting")
+
+    // for array
+    request.AssertContainsJSON("addresses.1.name", "USA")
+    request.AssertNotContainsJSON("addresses.2.name")
 
     // use regexp for custom matcher
     request.AssertMatch("user.*")
