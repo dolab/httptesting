@@ -160,7 +160,7 @@ func (test *Client) AssertNotContainsJSON(key string) {
 	}
 }
 
-func (test *Client) AssertionContainsJSONInt(key string, value int) {
+func (test *Client) AssertContainsJSONInt(key string, value int) {
 	actual, err := jsonparser.GetInt(test.ResponseBody, strings.Split(key, ".")...)
 	if err != nil {
 		test.t.Errorf("Expected response body contains json key %s with %v, but got Errr(%v)", key, value, err)
@@ -171,7 +171,7 @@ func (test *Client) AssertionContainsJSONInt(key string, value int) {
 	assert.EqualValues(test.t, value, actual, "Expected response body contains json key "+key+" with "+valueStr+", but got "+actualStr+".")
 }
 
-func (test *Client) AssertionContainsJSONFloat(key string, value float64) {
+func (test *Client) AssertContainsJSONFloat(key string, value float64) {
 	actual, err := jsonparser.GetFloat(test.ResponseBody, strings.Split(key, ".")...)
 	if err != nil {
 		test.t.Errorf("Expected response body contains json key %s with %v, but got Errr(%v)", key, value, err)
@@ -182,7 +182,7 @@ func (test *Client) AssertionContainsJSONFloat(key string, value float64) {
 	assert.EqualValues(test.t, value, actual, "Expected response body contains json key "+key+" with "+valueStr+", but got "+actualStr+".")
 }
 
-func (test *Client) AssertionContainsJSONBool(key string, value bool) {
+func (test *Client) AssertContainsJSONBool(key string, value bool) {
 	actual, err := jsonparser.GetBoolean(test.ResponseBody, strings.Split(key, ".")...)
 	if err != nil {
 		test.t.Errorf("Expected response body contains json key %s with %v, but got Errr(%v)", key, value, err)
