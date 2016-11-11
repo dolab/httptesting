@@ -102,15 +102,16 @@ func (test *Client) NewRequest(t *testing.T, request *http.Request) {
 	if err != nil {
 		t.Fatalf("[REQUEST] %s %s: %#v\n", request.Method, request.URL.Path, err.Error())
 	}
+	defer test.Response.Body.Close()
 
 	// Read response body if not empty
+	test.ResponseBody = []byte{}
 	if test.Response.ContentLength > 0 {
 		test.ResponseBody, err = ioutil.ReadAll(test.Response.Body)
 		if err != nil {
 			t.Fatalf("[RESPONSE] %s %s: %#v\n", request.Method, request.URL.Path, err)
 		}
 	}
-	test.Response.Body.Close()
 }
 
 // NewSessionRequest issues any request with session / cookie and read the response.
