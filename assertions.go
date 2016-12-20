@@ -110,7 +110,7 @@ func (test *Client) AssertContainsJSON(key, value string) {
 			buf, _, _, err = jsonparser.Get(buf, yek)
 		} else {
 			var i int64 = 0
-			err = jsonparser.ArrayEach(buf, func(arrBuf []byte, arrType jsonparser.ValueType, arrOffset int, arrErr error) {
+			_, err = jsonparser.ArrayEach(buf, func(arrBuf []byte, arrType jsonparser.ValueType, arrOffset int, arrErr error) {
 				if i == n {
 					buf = arrBuf
 					err = arrErr
@@ -144,7 +144,7 @@ func (test *Client) AssertNotContainsJSON(key string) {
 			buf, _, _, err = jsonparser.Get(buf, yek)
 		} else {
 			var i int64 = 0
-			err = jsonparser.ArrayEach(buf, func(arrBuf []byte, arrType jsonparser.ValueType, arrOffset int, arrErr error) {
+			_, err = jsonparser.ArrayEach(buf, func(arrBuf []byte, arrType jsonparser.ValueType, arrOffset int, arrErr error) {
 				if i == n {
 					buf = arrBuf
 					err = arrErr
