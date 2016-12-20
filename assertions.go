@@ -96,7 +96,7 @@ func (test *Client) AssertNotMatch(re string) {
 	}
 }
 
-func (test *Client) AssertContainsJSON(key, value string) {
+func (test *Client) AssertContainsJSON(key string, value interface{}) {
 	var (
 		buf = test.ResponseBody
 		err error
@@ -110,7 +110,7 @@ func (test *Client) AssertContainsJSON(key, value string) {
 			buf, _, _, err = jsonparser.Get(buf, yek)
 		} else {
 			var i int64 = 0
-			err = jsonparser.ArrayEach(buf, func(arrBuf []byte, arrType jsonparser.ValueType, arrOffset int, arrErr error) {
+			_, err = jsonparser.ArrayEach(buf, func(arrBuf []byte, arrType jsonparser.ValueType, arrOffset int, arrErr error) {
 				if i == n {
 					buf = arrBuf
 					err = arrErr
@@ -127,7 +127,60 @@ func (test *Client) AssertContainsJSON(key, value string) {
 	}
 
 	actual := string(buf)
-	assert.EqualValues(test.t, value, actual, "Expected response body contains json key "+key+" with "+value+", but got "+actual+".")
+	switch value.(type) {
+	case []byte:
+		expected := string(value.([]byte))
+		assert.EqualValues(test.t, expected, actual, "Expected response body contains json key "+key+" with "+expected+", but got "+actual+".")
+
+	case string:
+		expected := value.(string)
+		assert.EqualValues(test.t, expected, actual, "Expected response body contains json key "+key+" with "+expected+", but got "+actual+".")
+
+	case int8:
+		expected := int(value.(int8))
+		actualInt, _ := strconv.Atoi(actual)
+		assert.EqualValues(test.t, expected, actualInt, "Expected response body contains json key "+key+" with "+strconv.Itoa(expected)+", but got "+actual+".")
+
+	case int:
+		expected := value.(int)
+		actualInt, _ := strconv.Atoi(actual)
+		assert.EqualValues(test.t, expected, actualInt, "Expected response body contains json key "+key+" with "+strconv.Itoa(expected)+", but got "+actual+".")
+
+	case int16:
+		expected := int64(value.(int16))
+		actualInt, _ := strconv.ParseInt(actual, 10, 16)
+		assert.EqualValues(test.t, expected, actualInt, "Expected response body contains json key "+key+" with "+strconv.FormatInt(expected, 10)+", but got "+actual+".")
+
+	case int32:
+		expected := int64(value.(int32))
+		actualInt, _ := strconv.ParseInt(actual, 10, 32)
+		assert.EqualValues(test.t, expected, actualInt, "Expected response body contains json key "+key+" with "+strconv.FormatInt(expected, 10)+", but got "+actual+".")
+
+	case int64:
+		expected := value.(int64)
+		actualInt, _ := strconv.ParseInt(actual, 10, 64)
+		assert.EqualValues(test.t, expected, actualInt, "Expected response body contains json key "+key+" with "+strconv.FormatInt(expected, 10)+", but got "+actual+".")
+
+	case float32:
+		expected := float64(value.(float32))
+		actualInt, _ := strconv.ParseFloat(actual, 32)
+		assert.EqualValues(test.t, expected, actualInt, "Expected response body contains json key "+key+" with "+strconv.FormatFloat(expected, 'f', 5, 32)+", but got "+actual+".")
+
+	case float64:
+		expected := value.(float64)
+		actualInt, _ := strconv.ParseFloat(actual, 64)
+		assert.EqualValues(test.t, expected, actualInt, "Expected response body contains json key "+key+" with "+strconv.FormatFloat(expected, 'f', 5, 64)+", but got "+actual+".")
+
+	case bool:
+		expected := value.(bool)
+		switch actual {
+		case "true", "True", "1", "on":
+			assert.True(test.t, expected, "Expected response body contains json key "+key+" with [true|True|1|on], but got "+actual+".")
+
+		default:
+			assert.False(test.t, expected, "Expected response body contains json key "+key+" with [false|False|0|off], but got "+actual+".")
+		}
+	}
 }
 
 func (test *Client) AssertNotContainsJSON(key string) {
@@ -144,7 +197,7 @@ func (test *Client) AssertNotContainsJSON(key string) {
 			buf, _, _, err = jsonparser.Get(buf, yek)
 		} else {
 			var i int64 = 0
-			err = jsonparser.ArrayEach(buf, func(arrBuf []byte, arrType jsonparser.ValueType, arrOffset int, arrErr error) {
+			_, err = jsonparser.ArrayEach(buf, func(arrBuf []byte, arrType jsonparser.ValueType, arrOffset int, arrErr error) {
 				if i == n {
 					buf = arrBuf
 					err = arrErr
@@ -158,43 +211,4 @@ func (test *Client) AssertNotContainsJSON(key string) {
 	if err == nil {
 		test.t.Errorf("Expected response body does not contain json key %s, but got %s", key, string(buf))
 	}
-}
-
-func (test *Client) AssertContainsJSONInt(key string, value int) {
-	actual, err := jsonparser.GetInt(test.ResponseBody, strings.Split(key, ".")...)
-	if err != nil {
-		test.t.Errorf("Expected response body contains json key %s with %v, but got Errr(%v)", key, value, err)
-	}
-
-	valueStr := strconv.FormatInt(int64(value), 10)
-	actualStr := strconv.FormatInt(int64(actual), 10)
-	assert.EqualValues(test.t, value, actual, "Expected response body contains json key "+key+" with "+valueStr+", but got "+actualStr+".")
-}
-
-func (test *Client) AssertContainsJSONFloat(key string, value float64) {
-	actual, err := jsonparser.GetFloat(test.ResponseBody, strings.Split(key, ".")...)
-	if err != nil {
-		test.t.Errorf("Expected response body contains json key %s with %v, but got Errr(%v)", key, value, err)
-	}
-
-	valueStr := strconv.FormatFloat(value, 'e', 3, 10)
-	actualStr := strconv.FormatFloat(actual, 'e', 3, 10)
-	assert.EqualValues(test.t, value, actual, "Expected response body contains json key "+key+" with "+valueStr+", but got "+actualStr+".")
-}
-
-func (test *Client) AssertContainsJSONBool(key string, value bool) {
-	actual, err := jsonparser.GetBoolean(test.ResponseBody, strings.Split(key, ".")...)
-	if err != nil {
-		test.t.Errorf("Expected response body contains json key %s with %v, but got Errr(%v)", key, value, err)
-	}
-
-	valueStr := "true"
-	if !value {
-		valueStr = "false"
-	}
-	actualStr := "true"
-	if !actual {
-		actualStr = "false"
-	}
-	assert.EqualValues(test.t, value, actual, "Expected response body contains json key "+key+" with "+valueStr+", but got "+actualStr+".")
 }
