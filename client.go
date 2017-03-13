@@ -106,10 +106,23 @@ func (test *Client) NewRequest(t *testing.T, request *http.Request) {
 
 	// Read response body if not empty
 	test.ResponseBody = []byte{}
-	if test.Response.ContentLength > 0 {
-		test.ResponseBody, err = ioutil.ReadAll(test.Response.Body)
-		if err != nil {
-			t.Fatalf("[RESPONSE] %s %s: %#v\n", request.Method, request.URL.Path, err)
+
+	switch test.Response.StatusCode {
+	case http.StatusNoContent:
+		// ignore
+
+	default:
+		if test.ResponseBody, err = ioutil.ReadAll(test.Response.Body); err != nil {
+			if err != io.EOF {
+				t.Fatalf("[RESPONSE] %s %s: %#v\n", request.Method, request.URL.Path, err)
+			}
+
+			// unexpected EOF with content-length
+			if test.Response.ContentLength > 0 && int64(len(test.ResponseBody)) != test.Response.ContentLength {
+				t.Fatalf("[RESPONSE] %s %s: %#v\n", request.Method, request.URL.Path, err)
+			}
+
+			t.Logf("[RESPONSE] %s %s: Unexptected response body with io.EOF error.", request.Method, request.URL.Path)
 		}
 	}
 }
