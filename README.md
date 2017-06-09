@@ -57,6 +57,8 @@ package main
 
 import (
 	"testing"
+
+    "github.com/dolab/httptesting"
 )
 
 func Test_RequestClient(t *testing.T) {
