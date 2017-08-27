@@ -98,32 +98,40 @@ func (test *Client) AssertNotMatch(re string) {
 
 func (test *Client) AssertContainsJSON(key string, value interface{}) {
 	var (
-		buf = test.ResponseBody
-		err error
+		buf  = test.ResponseBody
+		data []byte
+		err  error
 	)
 
-	keys := strings.Split(key, ".")
-	for _, yek := range keys {
-		// is the yek a array subscript?
+	for _, yek := range strings.Split(key, ".") {
+		data, _, _, err = jsonparser.Get(buf, yek)
+		if err == nil {
+			buf = data
+
+			continue
+		}
+
+		// is the yek an array subscript?
 		n, e := strconv.ParseInt(yek, 10, 32)
 		if e != nil {
-			buf, _, _, err = jsonparser.Get(buf, yek)
-		} else {
-			var i int64 = 0
-			_, err = jsonparser.ArrayEach(buf, func(arrBuf []byte, arrType jsonparser.ValueType, arrOffset int, arrErr error) {
-				if i == n {
-					buf = arrBuf
-					err = arrErr
-				}
-
-				i += 1
-			})
-		}
-
-		if err != nil {
-			test.t.Errorf("Expected response body contains json key %s with %s, but got Errr(%v)", key, value, err)
 			break
 		}
+
+		var i int64 = 0
+		jsonparser.ArrayEach(buf, func(arrBuf []byte, arrType jsonparser.ValueType, arrOffset int, arrErr error) {
+			if i == n {
+				buf = arrBuf
+				err = arrErr
+			}
+
+			i++
+		})
+		if err != nil {
+			break
+		}
+	}
+	if err != nil {
+		test.t.Errorf("Expected response body contains json key %s with %s, but got Errr(%v)", key, value, err)
 	}
 
 	actual := string(buf)
@@ -185,26 +193,36 @@ func (test *Client) AssertContainsJSON(key string, value interface{}) {
 
 func (test *Client) AssertNotContainsJSON(key string) {
 	var (
-		buf = test.ResponseBody
-		err error
+		buf  = test.ResponseBody
+		data []byte
+		err  error
 	)
 
-	keys := strings.Split(key, ".")
-	for _, yek := range keys {
-		// is the yek a array subscript?
+	for _, yek := range strings.Split(key, ".") {
+		data, _, _, err = jsonparser.Get(buf, yek)
+		if err == nil {
+			buf = data
+
+			continue
+		}
+
+		// is the yek an array subscript?
 		n, e := strconv.ParseInt(yek, 10, 32)
 		if e != nil {
-			buf, _, _, err = jsonparser.Get(buf, yek)
-		} else {
-			var i int64 = 0
-			_, err = jsonparser.ArrayEach(buf, func(arrBuf []byte, arrType jsonparser.ValueType, arrOffset int, arrErr error) {
-				if i == n {
-					buf = arrBuf
-					err = arrErr
-				}
+			break
+		}
 
-				i += 1
-			})
+		var i int64 = 0
+		jsonparser.ArrayEach(buf, func(arrBuf []byte, arrType jsonparser.ValueType, arrOffset int, arrErr error) {
+			if i == n {
+				buf = arrBuf
+				err = arrErr
+			}
+
+			i++
+		})
+		if err != nil {
+			break
 		}
 	}
 
