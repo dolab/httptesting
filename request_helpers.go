@@ -1,266 +1,238 @@
 package httptesting
 
 import (
-	"bytes"
 	"encoding/json"
 	"encoding/xml"
-	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
-	"strconv"
 )
 
-// Get issues a GET request to the given path and stores the result in Response and ResponseBody.
-func (client *RequestClient) Get(urlpath string, params ...url.Values) {
+// Get issues a GET request to the given path with Content-Type: text/html header, and
+// stores the result in Response and ResponseBody if success.
+func (r *Request) Get(path string, params ...url.Values) {
 	contentType := "text/html"
 
 	if len(params) == 0 {
-		client.Invoke("GET", urlpath, contentType)
+		r.Send("GET", path, contentType)
 	} else {
-		client.Invoke("GET", urlpath, contentType, params[0])
+		r.Send("GET", path, contentType, params[0])
 	}
 }
 
-// Head issues a HEAD request to the given path and stores the result in Response and ResponseBody.
-func (client *RequestClient) Head(urlpath string, params ...url.Values) {
+// GetJSON issues a GET request to the given path with Content-Type: application/json header, and
+// stores the result in Response and ResponseBody if success.
+func (r *Request) GetJSON(path string, params ...url.Values) {
+	contentType := "application/json"
+
+	if len(params) == 0 {
+		r.Send("GET", path, contentType)
+	} else {
+		r.Send("GET", path, contentType, params[0])
+	}
+}
+
+// GetXML issues a GET request to the given path with Content-Type: text/xml header, and
+// stores the result in Response and ResponseBody if success.
+func (r *Request) GetXML(path string, params ...url.Values) {
+	contentType := "text/xml"
+
+	if len(params) == 0 {
+		r.Send("GET", path, contentType)
+	} else {
+		r.Send("GET", path, contentType, params[0])
+	}
+}
+
+// Head issues a HEAD request to the given path with Content-Type: text/html header, and
+// stores the result in Response if success.
+func (r *Request) Head(path string, params ...url.Values) {
 	contentType := "text/html"
 
 	if len(params) == 0 {
-		client.Invoke("HEAD", urlpath, contentType)
+		r.Send("HEAD", path, contentType)
 	} else {
-		client.Invoke("HEAD", urlpath, contentType, params[0])
+		r.Send("HEAD", path, contentType, params[0])
 	}
 }
 
-// Options issues an OPTIONS request to the given path and stores the result in Response and ResponseBody.
-func (client *RequestClient) Options(urlpath string, params ...url.Values) {
+// Options issues an OPTIONS request to the given path Content-Type: text/html header, and
+// stores the result in Response if success.
+func (r *Request) Options(path string, params ...url.Values) {
 	contentType := "text/html"
 
 	if len(params) == 0 {
-		client.Invoke("OPTIONS", urlpath, contentType)
+		r.Send("OPTIONS", path, contentType)
 	} else {
-		client.Invoke("OPTIONS", urlpath, "text/html", params[0])
+		r.Send("OPTIONS", path, contentType, params[0])
 	}
 }
 
-// Put issues a PUT request to the given path, sending request with specified Content-Type header, and
-// stores the result in Response and ResponseBody.
-func (client *RequestClient) Put(urlpath, contentType string, data ...interface{}) {
-	client.Invoke("PUT", urlpath, contentType, data...)
+// Put issues a PUT request to the given path with specified Content-Type header, and
+// stores the result in Response and ResponseBody if success.
+func (r *Request) Put(path, contentType string, data ...interface{}) {
+	r.Send("PUT", path, contentType, data...)
 }
 
 // PutForm issues a PUT request to the given path with Content-Type: application/x-www-form-urlencoded header, and
-// stores the result in Response and ResponseBody.
-func (client *RequestClient) PutForm(urlpath string, data interface{}) {
-	client.Invoke("PUT", urlpath, "application/x-www-form-urlencoded", data)
+// stores the result in Response and ResponseBody if success.
+func (r *Request) PutForm(path string, data interface{}) {
+	r.Put(path, "application/x-www-form-urlencoded", data)
 }
 
 // PutJSON issues a PUT request to the given path with Content-Type: application/json header, and
-// stores the result in Response and ResponseBody.
-// It will encode data by json.Marshal before making request.
-func (client *RequestClient) PutJSON(urlpath string, data interface{}) {
+// stores the result in Response and ResponseBody if success.
+// NOTE: It will encode data by json.Marshal before making request.
+func (r *Request) PutJSON(path string, data interface{}) {
 	b, err := json.Marshal(data)
 	if err != nil {
-		client.t.Fatal(err)
+		r.t.Fatalf("[PutJSON] json.Marshal(%T): %v", data, err)
 	}
 
-	client.Invoke("PUT", urlpath, "application/json", b)
+	r.Put(path, "application/json", b)
 }
 
 // PutXML issues a PUT request to the given path with Content-Type: text/xml header, and
-// stores the result in Response and ResponseBody.
-// It will encode data by xml.Marshal before making request.
-func (client *RequestClient) PutXML(urlpath string, data interface{}) {
+// stores the result in Response and ResponseBody if success.
+// NOTE: It will encode data by xml.Marshal before making request.
+func (r *Request) PutXML(path string, data interface{}) {
 	b, err := xml.Marshal(data)
 	if err != nil {
-		client.t.Fatal(err)
+		r.t.Fatalf("[PutXML] xml.Marshal(%T): %v", data, err)
 	}
 
-	client.Invoke("PUT", urlpath, "text/xml", b)
+	r.Put(path, "text/xml", b)
 }
 
-// Post issues a POST request to the given path, sending request with specified Content-Type header, and
-// stores the result in Response and ResponseBody.
-func (client *RequestClient) Post(urlpath, contentType string, data ...interface{}) {
-	client.Invoke("POST", urlpath, contentType, data...)
+// Post issues a POST request to the given path with specified Content-Type header, and
+// stores the result in Response and ResponseBody if success.
+func (r *Request) Post(path, contentType string, data ...interface{}) {
+	r.Send("POST", path, contentType, data...)
 }
 
 // PostForm issues a POST request to the given path with Content-Type: application/x-www-form-urlencoded header, and
-// stores the result in Response and ResponseBody.
-func (client *RequestClient) PostForm(urlpath string, data interface{}) {
-	client.Invoke("POST", urlpath, "application/x-www-form-urlencoded", data)
+// stores the result in Response and ResponseBody if success.
+func (r *Request) PostForm(path string, data interface{}) {
+	r.Post(path, "application/x-www-form-urlencoded", data)
 }
 
 // PostJSON issues a POST request to the given path with Content-Type: application/json header, and
-// stores the result in Response and ResponseBody.
-// It will encode data by json.Marshal before making request.
-func (client *RequestClient) PostJSON(urlpath string, data interface{}) {
+// stores the result in Response and ResponseBody if success.
+// NOTE: It will encode data by json.Marshal before making request.
+func (r *Request) PostJSON(path string, data interface{}) {
 	b, err := json.Marshal(data)
 	if err != nil {
-		client.t.Fatal(err)
+		r.t.Fatalf("[PostJSON] json.Marshal(%T): %v", data, err)
 	}
 
-	client.Invoke("POST", urlpath, "application/json", b)
+	r.Post(path, "application/json", b)
 }
 
 // PostXML issues a POST request to the given path with Content-Type: text/xml header, and
-// stores the result in Response and ResponseBody.
-// It will encode data by xml.Marshal before making request.
-func (client *RequestClient) PostXML(urlpath string, data interface{}) {
+// stores the result in Response and ResponseBody if success.
+// NOTE: It will encode data by xml.Marshal before making request.
+func (r *Request) PostXML(path string, data interface{}) {
 	b, err := xml.Marshal(data)
 	if err != nil {
-		client.t.Fatal(err)
+		r.t.Fatalf("[PostXML] xml.Marshal(%T): %v", data, err)
 	}
 
-	client.Invoke("POST", urlpath, "text/xml", b)
+	r.Post(path, "text/xml", b)
 }
 
-// Patch issues a PATCH request to the given path, sending request with specified Content-Type header, and
-// stores the result in Response and ResponseBody.
-func (client *RequestClient) Patch(urlpath, contentType string, data ...interface{}) {
-	client.Invoke("PATCH", urlpath, contentType, data...)
+// Patch issues a PATCH request to the given path with specified Content-Type header, and
+// stores the result in Response and ResponseBody if success.
+func (r *Request) Patch(path, contentType string, data ...interface{}) {
+	r.Send("PATCH", path, contentType, data...)
 }
 
 // PatchForm issues a PATCH request to the given path with Content-Type: application/x-www-form-urlencoded header, and
-// stores the result in Response and ResponseBody.
-func (client *RequestClient) PatchForm(urlpath string, data interface{}) {
-	client.Invoke("PATCH", urlpath, "application/x-www-form-urlencoded", data)
+// stores the result in Response and ResponseBody if success.
+func (r *Request) PatchForm(path string, data interface{}) {
+	r.Patch(path, "application/x-www-form-urlencoded", data)
 }
 
 // PatchJSON issues a PATCH request to the given path with with Content-Type: application/json header, and
-// stores the result in Response and ResponseBody.
+// stores the result in Response and ResponseBody if success.
 // It will encode data by json.Marshal before making request.
-func (client *RequestClient) PatchJSON(urlpath string, data interface{}) {
+func (r *Request) PatchJSON(path string, data interface{}) {
 	b, err := json.Marshal(data)
 	if err != nil {
-		client.t.Fatal(err)
+		r.t.Fatalf("[PatchJSON] json.Marshal(%T): %v", data, err)
 	}
 
-	client.Invoke("PATCH", urlpath, "application/json", b)
+	r.Patch(path, "application/json", b)
 }
 
 // PatchXML issues a PATCH request to the given path with Content-Type: text/xml header, and
-// stores the result in Response and ResponseBody.
-// It will encode data by xml.Marshal before making request.
-func (client *RequestClient) PatchXML(urlpath string, data interface{}) {
+// stores the result in Response and ResponseBody if success.
+// NOTE: It will encode data by xml.Marshal before making request.
+func (r *Request) PatchXML(path string, data interface{}) {
 	b, err := xml.Marshal(data)
 	if err != nil {
-		client.t.Fatal(err)
+		r.t.Fatalf("[PatchXML] xml.Marshal(%T): %v", data, err)
 	}
 
-	client.Invoke("PATCH", urlpath, "text/xml", b)
+	r.Patch(path, "text/xml", b)
 }
 
 // Delete issues a DELETE request to the given path, sending request with specified Content-Type header, and
-// stores the result in Response and ResponseBody.
-func (client *RequestClient) Delete(urlpath, contentType string, data ...interface{}) {
-	client.Invoke("DELETE", urlpath, contentType, data...)
+// stores the result in Response and ResponseBody if success.
+func (r *Request) Delete(path, contentType string, data ...interface{}) {
+	r.Send("DELETE", path, contentType, data...)
 }
 
 // DeleteForm issues a DELETE request to the given path with Content-Type: application/x-www-form-urlencoded header, and
-// stores the result in Response and ResponseBody.
-func (client *RequestClient) DeleteForm(urlpath string, data interface{}) {
-	client.Invoke("DELETE", urlpath, "application/x-www-form-urlencoded", data)
+// stores the result in Response and ResponseBody if success.
+func (r *Request) DeleteForm(path string, data interface{}) {
+	r.Delete(path, "application/x-www-form-urlencoded", data)
 }
 
 // DeleteJSON issues a DELETE request to the given path with Content-Type: application/json header, and
-// stores the result in Response and ResponseBody.
-// It will encode data by json.Marshal before making request.
-func (client *RequestClient) DeleteJSON(urlpath string, data interface{}) {
+// stores the result in Response and ResponseBody if success.
+// NOTE: It will encode data by json.Marshal before making request.
+func (r *Request) DeleteJSON(path string, data interface{}) {
 	b, err := json.Marshal(data)
 	if err != nil {
-		client.t.Fatal(err)
+		r.t.Fatalf("[DeleteJSON] json.Marshal(%T): %v", data, err)
 	}
 
-	client.Invoke("DELETE", urlpath, "application/json", b)
+	r.Delete(path, "application/json", b)
 }
 
 // DeleteXML issues a DELETE request to the given path with Content-Type: text/xml header, and
-// stores the result in Response and ResponseBody.
-// It will encode data by xml.Marshal before making request.
-func (client *RequestClient) DeleteXML(urlpath string, data interface{}) {
+// stores the result in Response and ResponseBody if success.
+// NOTE: It will encode data by xml.Marshal before making request.
+func (r *Request) DeleteXML(path string, data interface{}) {
 	b, err := xml.Marshal(data)
 	if err != nil {
-		client.t.Fatal(err)
+		r.t.Fatalf("[DeleteXML] xml.Marshal(%T): %v", data, err)
 	}
 
-	client.Invoke("DELETE", urlpath, "text/xml", b)
+	r.Delete(path, "text/xml", b)
 }
 
-// Invoke issues a HTTP request to the given path with specified method and content type header, and
-// stores the result in Response and ResponseBody.
-func (client *RequestClient) Invoke(method, urlpath, contentType string, data ...interface{}) {
-	var (
-		request *http.Request
-		err     error
-	)
-
-	if len(data) == 0 {
-		request, err = http.NewRequest(method, client.Url(urlpath), nil)
-	} else {
-		var reader io.Reader
-
-		body := data[0]
-		switch body.(type) {
-		case io.Reader:
-			reader, _ = body.(io.Reader)
-
-		case string:
-			s, _ := body.(string)
-
-			reader = bytes.NewBufferString(s)
-
-		case []byte:
-			buf, _ := body.([]byte)
-
-			reader = bytes.NewBuffer(buf)
-
-		case url.Values:
-			params, _ := body.(url.Values)
-
-			reader = bytes.NewBufferString(params.Encode())
-
-		default:
-			b, _ := json.Marshal(body)
-
-			reader = bytes.NewBuffer(b)
-			contentType = "application/json"
-		}
-
-		switch method {
-		case "GET", "HEAD", "OPTIONS": // apply request params to url
-			urlStr := client.Url(urlpath)
-
-			data, _ := ioutil.ReadAll(reader)
-			if len(data) != 0 {
-				urlStr += "?" + string(data)
-			}
-
-			request, err = http.NewRequest(method, urlStr, nil)
-
-		default:
-			request, err = http.NewRequest(method, client.Url(urlpath), reader)
-		}
-	}
-
+// Send issues a HTTP request to the given path with specified method and content type header, and
+// stores the result in Response and ResponseBody if success.
+// NOTE: It will encode data with json.Marshal for unspported types and reset content type to application/json for the request.
+func (r *Request) Send(method, path, contentType string, data ...interface{}) {
+	request, err := r.Build(method, path, contentType, data...)
 	if err != nil {
-		client.t.Fatalf("%s %s: %#v\n", method, urlpath, err)
+		r.t.Fatalf("[SEND] %s %s: %v\n", method, path, err)
 	}
 
-	request.Header.Set("Content-Type", contentType)
+	// adjust custom headers
+	for key, values := range r.header {
+		// ignore Content-Type and Content-Length headers
+		switch http.CanonicalHeaderKey(key) {
+		case "Content-Type", "Content-Length":
+			// ignore
 
-	// apply custom headers
-	for key, values := range client.header {
-		for _, value := range values {
-			request.Header.Add(key, value)
+		default:
+			for _, value := range values {
+				request.Header.Add(key, value)
+			}
 		}
 	}
 
-	contentLength, err := strconv.ParseInt(request.Header.Get("Content-Length"), 10, 64)
-	if err == nil {
-		request.ContentLength = contentLength
-	}
-
-	client.NewSessionRequest(request)
+	r.NewSessionRequest(request)
 }
