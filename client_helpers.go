@@ -219,12 +219,17 @@ func (c *Client) DeleteXML(t *testing.T, path string, data interface{}) {
 // stores the result in Response and ResponseBody if success.
 // NOTE: It will encode data with json.Marshal for unspported types and reset content type to application/json for the request.
 func (c *Client) Send(t *testing.T, method, path, contentType string, data ...interface{}) {
-	c.t = t
+	request, err := c.Build(method, path, contentType, data...)
+	if err != nil {
+		t.Fatalf("[SEND] %s %s: %v\n", method, path, err)
+	}
 
+	c.NewSessionRequest(t, request)
+}
+
+func (c *Client) Build(method, path, contentType string, data ...interface{}) (request *http.Request, err error) {
 	var (
-		request *http.Request
-		buf     *bytes.Buffer
-		err     error
+		buf *bytes.Buffer
 	)
 
 	if len(data) == 0 {
@@ -273,13 +278,12 @@ func (c *Client) Send(t *testing.T, method, path, contentType string, data ...in
 	}
 
 	if err != nil {
-		t.Fatalf("[SEND] %s %s: %v\n", method, path, err)
+		return
 	}
 
-	// adjust request headers
+	// hijack request headers
 	request.Header.Set("Content-Type", contentType)
 	request.Header.Set("Content-Length", strconv.FormatInt(int64(buf.Len()), 10))
 	request.ContentLength = int64(buf.Len())
-
-	c.NewSessionRequest(t, request)
+	return
 }

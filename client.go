@@ -16,6 +16,7 @@ import (
 )
 
 // Client defines request component of httptesting
+// NOTE: Client is not safe for concurrency, please use client.New(t) instead.
 type Client struct {
 	Response     *http.Response
 	ResponseBody []byte
