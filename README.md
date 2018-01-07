@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/dolab/httptesting.svg?branch=master&style=flat)](https://travis-ci.org/dolab/httptesting)
 
-HTTP testing client of golang.
+HTTP testing client of golang for human.
 
 ## Installation
 
@@ -24,29 +24,35 @@ import (
 
 func Test_Client(t *testing.T) {
     host := "https://example.com"
-    test := httptesting.New(host, true)
+    client := httptesting.New(host, true)
 
-    test.Get("/")
+    client.Get("/")
 
     // verify http response status
-    test.AssertOK()
+    client.AssertOK()
+
+    // verify http response header
+    client.AssertExistHeader("Content-Length")
 
     // verify http response body
-    test.AssertNotEmpty()
+    client.AssertNotEmpty()
 }
 
 func Test_ClientWithCustomRequest(t *testing.T) {
     r, _ := http.NewRequest("HEAD", "https://example.com", nil)
     r.Header.Add("X-Custom-Header", "custom-header")
 
-    test := httptesting.New("", true)
-    test.NewRequest(r)
+    client := httptesting.New("", true)
+    client.NewRequest(r)
 
     // verify http response status
-    test.AssertOK()
+    client.AssertOK()
+
+    // verify http response header
+    client.AssertExistHeader("Content-Length")
 
     // verify http response body
-    test.AssertEmpty()
+    client.AssertEmpty()
 }
 ```
 
@@ -59,32 +65,62 @@ import (
 	"testing"
 )
 
-func Test_RequestClient(t *testing.T) {
+func Test_Request(t *testing.T) {
     host := "https://example.com"
-    test := httptesting.New(host, true)
-    
-	request := test.New(t)
-	request.WithHeader("X-Mock-Client", "httptesting")
+    client := httptesting.New(host, true)
 
-    // assume server response with following json data:
-    // {"user":{"name":"httptesting","age":3},"addresses":[{"name":"china"},{"name":"USA"}]}
-	request.Get("/api/json", nil)
+    t.Run("GET /api/json", func(t *testing.T) {
+        request := client.New(t)
+        request.WithHeader("X-Mock-Client", "httptesting")
 
-    // verify http response status
-	request.AssertOK()
+        // assume server response with following json data:
+        // {"user":{"name":"httptesting","age":3},"addresses":[{"name":"china"},{"name":"USA"}]}
+        request.GetJSON("/api/json", nil)
 
-    // verify http response header
-    request.AssertHeader("X-Mock-Client", "httptesting")
+        // verify http response status
+        request.AssertOK()
 
-    // verify http response body with json format
-	request.AssertContainsJSON("user.name", "httptesting")
+        // verify http response header
+        request.AssertHeader("X-Mock-Client", "httptesting")
 
-    // for array
-    request.AssertContainsJSON("addresses.1.name", "USA")
-    request.AssertNotContainsJSON("addresses.2.name")
+        // verify http response body with json format
+        request.AssertContainsJSON("user.name", "httptesting")
 
-    // use regexp for custom matcher
-    request.AssertMatch("user.*")
+        // for array
+        request.AssertContainsJSON("addresses.1.name", "USA")
+        request.AssertNotContainsJSON("addresses.2.name")
+
+        // use regexp for custom matcher
+        request.AssertMatch("user.*")
+    })
+
+    t.Run("POST /api/json", func(t *testing.T) {
+        request := client.New(t)
+        request.WithHeader("X-Mock-Client", "httptesting")
+
+        payload := struct {
+            Name string `json:"name"`
+            Age  int    `json:"age"`
+        }{"httptesting", 3}
+
+        // assume server response with following json data:
+        // {"data":{"name":"httptesting","age":3},"success":true}
+        request.PostJSON("/api/json", payload)
+
+        // verify http response status
+        request.AssertOK()
+
+        // verify http response header
+        request.AssertHeader("X-Mock-Client", "httptesting")
+
+        // verify http response body with json format
+        request.AssertContainsJSON("data.name", "httptesting")
+        request.AssertContainsJSON("data.age", 3)
+        request.AssertContainsJSON("success", true)
+
+        // use regexp for custom matcher
+        request.AssertNotMatch("user.*")
+    })
 }
 ```
 

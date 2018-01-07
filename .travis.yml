@@ -1,8 +1,11 @@
 language: go
 go:
-  - 1.7.2
+  - 1.8
+  - 1.9
   
 before_script:
+  - go get -v github.com/golib/assert
+  - go get -v github.com/buger/jsonparser
 
 script:
   - go test

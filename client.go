@@ -15,134 +15,140 @@ import (
 	"golang.org/x/net/websocket"
 )
 
+// Client defines request component of httptesting
+// NOTE: Client is not safe for concurrency, please use client.New(t) instead.
 type Client struct {
-	Client       *http.Client
 	Response     *http.Response
 	ResponseBody []byte
 
-	t     *testing.T
-	host  string
-	https bool
+	t      *testing.T
+	client *http.Client
+	host   string
+	https  bool
 }
 
-// NewClient returns an initialized Client ready for using
-func New(host string, isHttps bool) *Client {
+// New returns an initialized Client ready for testing
+func New(host string, isHTTPS bool) *Client {
 	jar, _ := cookiejar.New(nil)
 
 	// adjust host
 	if strings.HasPrefix(host, "http://") || strings.HasPrefix(host, "https://") {
-		u, err := url.Parse(host)
+		urlobj, err := url.Parse(host)
 		if err == nil {
-			host = u.Host
+			host = urlobj.Host
 		}
 	}
 
 	return &Client{
-		Client: &http.Client{Jar: jar},
-		host:   host,
-		https:  isHttps,
+		client: &http.Client{
+			Jar: jar,
+		},
+		host:  host,
+		https: isHTTPS,
 	}
 }
 
 // Host returns the host and port of the server, e.g. "127.0.0.1:9090"
-func (test *Client) Host() string {
-	if test.host[0] == ':' {
-		return "127.0.0.1" + test.host
+func (c *Client) Host() string {
+	if c.host[0] == ':' {
+		return "127.0.0.1" + c.host
 	}
 
-	return test.host
+	return c.host
 }
 
 // Url returns the abs http/https URL of the resource, e.g. "http://127.0.0.1:9090/status".
 // The scheme is set to https if http.ssl is set to true in the configuration.
-func (test *Client) Url(path string) string {
-	if test.https {
-		return "https://" + test.Host() + path
+func (c *Client) Url(path string) string {
+	if c.https {
+		return "https://" + c.Host() + path
 	}
 
-	return "http://" + test.Host() + path
+	return "http://" + c.Host() + path
 }
 
 // WebsocketUrl returns the abs websocket URL of the resource, e.g. "ws://127.0.0.1:9090/status"
-func (test *Client) WebsocketUrl(path string) string {
-	return "ws://" + test.Host() + path
+func (c *Client) WebsocketUrl(path string) string {
+	return "ws://" + c.Host() + path
 }
 
-// Cookies returns cookies related with the host
-func (test *Client) Cookies() []*http.Cookie {
-	u, _ := url.Parse(test.Url("/"))
+// Cookies returns cookies related to the host
+func (c *Client) Cookies() []*http.Cookie {
+	urlobj, _ := url.Parse(c.Url("/"))
 
-	return test.Client.Jar.Cookies(u)
+	return c.client.Jar.Cookies(urlobj)
 }
 
-// SetCookie sets cookies with the host
-func (test *Client) SetCookies(cookies []*http.Cookie) {
-	u, _ := url.Parse(test.Url("/"))
+// SetCookies sets cookies for the host
+func (c *Client) SetCookies(cookies []*http.Cookie) {
+	urlobj, _ := url.Parse(c.Url("/"))
 
-	test.Client.Jar.SetCookies(u, cookies)
+	c.client.Jar.SetCookies(urlobj, cookies)
 }
 
-// New returns a RequestClient which has more customlization!
-func (test *Client) New(t *testing.T) *RequestClient {
-	client := NewRequestClient(test)
-	client.t = t
+// New returns a Request which has more customlization!
+func (c *Client) New(t *testing.T) *Request {
+	// copy avoiding data race issue
+	nc := *c
+	nc.t = t
 
-	return client
+	return NewRequest(&nc)
 }
 
 // NewRequest issues any request and read the response.
 // If successful, the caller may examine the Response and ResponseBody properties.
 // NOTE: You have to manage session / cookie data manually.
-func (test *Client) NewRequest(t *testing.T, request *http.Request) {
-	test.t = t
+func (c *Client) NewRequest(t *testing.T, request *http.Request) {
+	c.t = t
 
 	var err error
 
-	test.Response, err = test.Client.Do(request)
+	c.Response, err = c.client.Do(request)
 	if err != nil {
-		t.Fatalf("[REQUEST] %s %s: %#v\n", request.Method, request.URL.Path, err.Error())
+		t.Fatalf("[REQUEST] %s %s: %#v\n", request.Method, request.URL.RequestURI(), err)
 	}
-	defer test.Response.Body.Close()
+	defer c.Response.Body.Close()
 
 	// Read response body if not empty
-	test.ResponseBody = []byte{}
+	c.ResponseBody = []byte{}
 
-	switch test.Response.StatusCode {
+	switch c.Response.StatusCode {
 	case http.StatusNoContent:
 		// ignore
 
 	default:
-		if test.ResponseBody, err = ioutil.ReadAll(test.Response.Body); err != nil {
+		c.ResponseBody, err = ioutil.ReadAll(c.Response.Body)
+		if err != nil {
 			if err != io.EOF {
-				t.Fatalf("[RESPONSE] %s %s: %#v\n", request.Method, request.URL.Path, err)
+				t.Fatalf("[RESPONSE] %s %s: %#v\n", request.Method, request.URL.RequestURI(), err)
 			}
 
 			// unexpected EOF with content-length
-			if test.Response.ContentLength > 0 && int64(len(test.ResponseBody)) != test.Response.ContentLength {
-				t.Fatalf("[RESPONSE] %s %s: %#v\n", request.Method, request.URL.Path, err)
+			if c.Response.ContentLength > 0 && int64(len(c.ResponseBody)) != c.Response.ContentLength {
+				t.Fatalf("[RESPONSE] %s %s: %#v\n", request.Method, request.URL.RequestURI(), err)
 			}
 
-			t.Logf("[RESPONSE] %s %s: Unexptected response body with io.EOF error.", request.Method, request.URL.Path)
+			t.Logf("[RESPONSE] %s %s: Unexptected response body with io.EOF error.", request.Method, request.URL.RequestURI())
 		}
 	}
 }
 
-// NewSessionRequest issues any request with session / cookie and read the response.
+// NewSessionRequest issues any request with session/cookie and read the response.
 // If successful, the caller may examine the Response and ResponseBody properties.
 // NOTE: Session data will be added to the request cookies for you.
-func (test *Client) NewSessionRequest(t *testing.T, request *http.Request) {
-	for _, cookie := range test.Client.Jar.Cookies(request.URL) {
+func (c *Client) NewSessionRequest(t *testing.T, request *http.Request) {
+	for _, cookie := range c.client.Jar.Cookies(request.URL) {
 		request.AddCookie(cookie)
 	}
 
-	test.NewRequest(t, request)
+	c.NewRequest(t, request)
 }
 
-// NewFilterRequest issues any request with TransportFiler and read the response.
+// NewFilterRequest issues any request with TransportFilter and read the response.
 // If successful, the caller may examine the Response and ResponseBody properties.
 // NOTE: It returns error without apply HTTP request when transport filter returned an error.
-func (test *Client) NewFilterRequest(t *testing.T, request *http.Request, filter TransportFilter) {
-	test.t = t
+func (c *Client) NewFilterRequest(t *testing.T, request *http.Request, filter TransportFilter) {
+	c.t = t
 
 	var err error
 
@@ -150,23 +156,23 @@ func (test *Client) NewFilterRequest(t *testing.T, request *http.Request, filter
 		Transport: newTransport(filter),
 	}
 
-	test.Response, err = client.Do(request)
+	c.Response, err = client.Do(request)
 	if err != nil {
-		t.Fatalf("[REQUEST] %s %s: %#v\n", request.Method, request.URL.Path, err.Error())
+		t.Fatalf("[FILTERED REQUEST] %s %s: %#v\n", request.Method, request.URL.RequestURI(), err)
 	}
 
 	// Read response body
-	test.ResponseBody, err = ioutil.ReadAll(test.Response.Body)
+	c.ResponseBody, err = ioutil.ReadAll(c.Response.Body)
 	if err != nil {
-		t.Fatalf("[RESPONSE] %s %s: %#v\n", request.Method, request.URL.Path, err)
+		t.Fatalf("[FILTERED RESPONSE] %s %s: %#v\n", request.Method, request.URL.RequestURI(), err)
 	}
-	test.Response.Body.Close()
+	c.Response.Body.Close()
 }
 
 // NewMultipartRequest issues a multipart request for the method & fields given and read the response.
 // If successful, the caller may examine the Response and ResponseBody properties.
-func (test *Client) NewMultipartRequest(t *testing.T, method, path, filename string, file interface{}, fields ...map[string]string) {
-	test.t = t
+func (c *Client) NewMultipartRequest(t *testing.T, method, path, filename string, file interface{}, fields ...map[string]string) {
+	c.t = t
 
 	var buf bytes.Buffer
 
@@ -174,7 +180,7 @@ func (test *Client) NewMultipartRequest(t *testing.T, method, path, filename str
 
 	fw, ferr := mw.CreateFormFile("filename", filename)
 	if ferr != nil {
-		t.Fatalf("%s %s: %#v\n", method, path, ferr)
+		t.Fatalf("[MULTIPART REQUEST] %s %s: %#v\n", method, path, ferr)
 	}
 
 	// apply file
@@ -190,17 +196,17 @@ func (test *Client) NewMultipartRequest(t *testing.T, method, path, filename str
 		reader, _ = file.(*os.File)
 
 	case string:
-		filepath, _ := file.(string)
-
-		reader, err = os.Open(filepath)
+		reader, err = os.Open(file.(string))
 		if err != nil {
-			t.Fatalf("%s %s: %#v\n", method, path, err)
+			t.Fatalf("[MULTIPART REQUEST] os.Open(%v): %#v\n", file, err)
 		}
 
+	default:
+		t.Fatalf("[MULTIPART REQUEST] unsupported file type: %T\n", file)
 	}
 
 	if _, err := io.Copy(fw, reader); err != nil {
-		t.Fatalf("%s %s: %#v\n", method, path, err)
+		t.Fatalf("[MULTIPART REQUEST] io.Copy(%T, %T): %#v\n", fw, file, err)
 	}
 
 	// apply fields
@@ -213,23 +219,23 @@ func (test *Client) NewMultipartRequest(t *testing.T, method, path, filename str
 	// adds the terminating boundary
 	mw.Close()
 
-	request, err := http.NewRequest(method, test.Url(path), &buf)
+	request, err := http.NewRequest(method, c.Url(path), &buf)
 	if err != nil {
-		t.Fatalf("%s %s: %#v\n", method, path, err)
+		t.Fatalf("[MULTIPART REQUEST] %s %s: %#v\n", method, path, err)
 	}
 	request.Header.Set("Content-Type", mw.FormDataContentType())
 
-	test.NewRequest(t, request)
+	c.NewRequest(t, request)
 }
 
 // NewWebsocket creates a websocket connection to the given path and returns the connection
-func (test *Client) NewWebsocket(t *testing.T, path string) *websocket.Conn {
-	origin := test.WebsocketUrl("/")
-	target := test.WebsocketUrl(path)
+func (c *Client) NewWebsocket(t *testing.T, path string) *websocket.Conn {
+	origin := c.WebsocketUrl("/")
+	target := c.WebsocketUrl(path)
 
 	ws, err := websocket.Dial(target, "", origin)
 	if err != nil {
-		t.Fatalf("WS %s: %#v\n", path, err)
+		t.Fatalf("[WS REQUEST] connect %s: %#v\n", path, err)
 	}
 
 	return ws

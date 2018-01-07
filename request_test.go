@@ -8,7 +8,7 @@ import (
 	"github.com/golib/assert"
 )
 
-func Test_RequestClient(t *testing.T) {
+func Test_Request(t *testing.T) {
 	assertion := assert.New(t)
 	method := "GET"
 	uri := "/request/client"
