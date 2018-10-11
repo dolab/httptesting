@@ -227,7 +227,8 @@ func (c *Client) Send(t *testing.T, method, path, contentType string, data ...in
 	c.NewSessionRequest(t, request)
 }
 
-func (c *Client) Build(method, path, contentType string, data ...interface{}) (request *http.Request, err error) {
+func (c *Client) Build(method, urlpath, contentType string, data ...interface{}) (request *http.Request, err error) {
+	absurl := c.Url(urlpath)
 	var (
 		buf *bytes.Buffer
 	)
@@ -235,7 +236,7 @@ func (c *Client) Build(method, path, contentType string, data ...interface{}) (r
 	if len(data) == 0 {
 		buf = bytes.NewBuffer(nil)
 
-		request, err = http.NewRequest(method, c.Url(path), nil)
+		request, err = http.NewRequest(method, absurl, nil)
 	} else {
 		body := data[0]
 
@@ -260,7 +261,6 @@ func (c *Client) Build(method, path, contentType string, data ...interface{}) (r
 			contentType = "application/json"
 		}
 
-		absurl := c.Url(path)
 		switch method {
 		case "GET", "HEAD", "OPTIONS": // apply request params to url
 			if buf.Len() > 0 {

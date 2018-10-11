@@ -38,9 +38,56 @@ func Test_New(t *testing.T) {
 	ws := "ws://" + host
 
 	client := New(host, true)
+	assertion.Nil(client.Response)
+	assertion.Empty(client.ResponseBody)
+	assertion.Nil(client.ts)
+	assertion.NotNil(client.client)
+	assertion.Nil(client.t)
+	assertion.NotEmpty(client.host)
+	assertion.True(client.https)
 	assertion.Equal(host, client.Host())
 	assertion.Equal(url, client.Url(""))
 	assertion.Equal(ws, client.WebsocketUrl(""))
+
+	request := client.New(t)
+	assertion.Nil(request.Response)
+	assertion.Empty(request.ResponseBody)
+	assertion.Nil(request.ts)
+	assertion.NotNil(request.client)
+	assertion.NotNil(request.t)
+	assertion.Equal(client.host, request.host)
+	assertion.True(request.https)
+}
+
+func Test_NewServer(t *testing.T) {
+	assertion := assert.New(t)
+	method := "GET"
+	uri := "/server/https"
+	server := newMockServer(method, uri, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("x-request-method", r.Method)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("TLS"))
+	})
+
+	client := NewServer(server, true)
+	defer client.Close()
+
+	assertion.Nil(client.Response)
+	assertion.Empty(client.ResponseBody)
+	assertion.NotNil(client.ts)
+	assertion.NotNil(client.client)
+	assertion.Nil(client.t)
+	assertion.NotEmpty(client.host)
+	assertion.True(client.https)
+
+	request := client.New(t)
+	assertion.Nil(request.Response)
+	assertion.Empty(request.ResponseBody)
+	assertion.Nil(request.ts)
+	assertion.NotNil(request.client)
+	assertion.NotNil(request.t)
+	assertion.Equal(client.host, request.host)
+	assertion.True(request.https)
 }
 
 func Test_NewWithRacy(t *testing.T) {
