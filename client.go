@@ -2,11 +2,14 @@ package httptesting
 
 import (
 	"bytes"
+	"crypto/tls"
+	"crypto/x509"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/http/cookiejar"
+	"net/http/httptest"
 	"net/url"
 	"os"
 	"strings"
@@ -16,19 +19,42 @@ import (
 )
 
 // Client defines request component of httptesting
-// NOTE: Client is not safe for concurrency, please use client.New(t) instead.
+// NOTE: Client is not safe for concurrency, please use client.New(t) after initialized.
 type Client struct {
 	Response     *http.Response
 	ResponseBody []byte
 
-	t      *testing.T
+	ts     *httptest.Server
 	client *http.Client
+	t      *testing.T
 	host   string
 	https  bool
 }
 
-// New returns an initialized Client ready for testing
-func New(host string, isHTTPS bool) *Client {
+// New returns an initialized *Client ready for testing
+func New(host string, isTLS bool) *Client {
+	jar, _ := cookiejar.New(nil)
+
+	// adjust host
+	if strings.HasPrefix(host, "http://") || strings.HasPrefix(host, "https://") {
+		urlobj, err := url.Parse(host)
+		if err == nil {
+			host = urlobj.Host
+			isTLS = strings.HasPrefix(host, "https://")
+		}
+	}
+
+	return &Client{
+		client: &http.Client{
+			Jar: jar,
+		},
+		host:  host,
+		https: isTLS,
+	}
+}
+
+// NewWithTLS returns an initialized *Client with custom certificate.
+func NewWithTLS(host string, cert *x509.Certificate) *Client {
 	jar, _ := cookiejar.New(nil)
 
 	// adjust host
@@ -39,12 +65,20 @@ func New(host string, isHTTPS bool) *Client {
 		}
 	}
 
+	certPool := x509.NewCertPool()
+	certPool.AddCert(cert)
+
 	return &Client{
 		client: &http.Client{
 			Jar: jar,
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					RootCAs: certPool,
+				},
+			},
 		},
 		host:  host,
-		https: isHTTPS,
+		https: true,
 	}
 }
 
@@ -59,17 +93,17 @@ func (c *Client) Host() string {
 
 // Url returns the abs http/https URL of the resource, e.g. "http://127.0.0.1:9090/status".
 // The scheme is set to https if http.ssl is set to true in the configuration.
-func (c *Client) Url(path string) string {
+func (c *Client) Url(urlpath string) string {
 	if c.https {
-		return "https://" + c.Host() + path
+		return "https://" + c.Host() + urlpath
 	}
 
-	return "http://" + c.Host() + path
+	return "http://" + c.Host() + urlpath
 }
 
 // WebsocketUrl returns the abs websocket URL of the resource, e.g. "ws://127.0.0.1:9090/status"
-func (c *Client) WebsocketUrl(path string) string {
-	return "ws://" + c.Host() + path
+func (c *Client) WebsocketUrl(urlpath string) string {
+	return "ws://" + c.Host() + urlpath
 }
 
 // Cookies returns cookies related to the host
@@ -86,11 +120,12 @@ func (c *Client) SetCookies(cookies []*http.Cookie) {
 	c.client.Jar.SetCookies(urlobj, cookies)
 }
 
-// New returns a Request which has more customlization!
+// New returns a Request with copied *Client, which has more customlization!
 func (c *Client) New(t *testing.T) *Request {
 	// copy avoiding data race issue
 	nc := *c
 	nc.t = t
+	nc.ts = nil
 
 	return NewRequest(&nc)
 }
@@ -239,4 +274,13 @@ func (c *Client) NewWebsocket(t *testing.T, path string) *websocket.Conn {
 	}
 
 	return ws
+}
+
+// Close tryes to close *httptest.Server created by NewServer()
+func (c *Client) Close() {
+	if c.ts == nil {
+		return
+	}
+
+	c.ts.Close()
 }

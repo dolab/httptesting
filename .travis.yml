@@ -1,11 +1,24 @@
 language: go
-go:
-  - 1.8
-  - 1.9
-  
+
 before_script:
   - go get -v github.com/golib/assert
   - go get -v github.com/buger/jsonparser
 
-script:
-  - go test
+jobs:
+  fast_finish: true
+  include:
+    - stage: go1.6
+      go: 1.6
+      script: go test
+
+    - stage: go1.8
+      go: 1.7
+      script: go test
+
+    - stage: go1.9
+      go: 1.9
+      script: go test
+
+    - stage: go1.11
+      go: 1.11
+      script: go test
