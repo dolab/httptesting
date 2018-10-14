@@ -1,12 +1,16 @@
 package httptesting
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
 	"sync"
 	"testing"
+
+	"./internal"
 
 	"github.com/golib/assert"
 )
@@ -62,7 +66,7 @@ func Test_New(t *testing.T) {
 func Test_NewServer(t *testing.T) {
 	assertion := assert.New(t)
 	method := "GET"
-	uri := "/server/https"
+	uri := "/server"
 	server := newMockServer(method, uri, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("x-request-method", r.Method)
 		w.WriteHeader(http.StatusOK)
@@ -88,6 +92,40 @@ func Test_NewServer(t *testing.T) {
 	assertion.NotNil(request.t)
 	assertion.Equal(client.host, request.host)
 	assertion.True(request.https)
+}
+
+func Test_NewServerWithTLS(t *testing.T) {
+	assertion := assert.New(t)
+	method := "GET"
+	uri := "/server/https"
+	server := newMockServer(method, uri, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("x-request-method", r.Method)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("TLS"))
+	})
+
+	cert, err := tls.X509KeyPair(internal.LocalhostCert, internal.LocalhostKey)
+	assertion.Nil(err)
+
+	ts := NewServerWithTLS(server, cert)
+	defer ts.Close()
+
+	// it should work with internal client
+	request := ts.New(t)
+	request.Get("/server/https", nil)
+	request.AssertOK()
+	request.AssertContains("TLS")
+
+	// it should work with custom TLS client
+	x509cert, err := x509.ParseCertificate(cert.Certificate[0])
+	assertion.Nil(err)
+
+	client := NewWithTLS(ts.Url(""), x509cert)
+
+	request = client.New(t)
+	request.Get("/server/https", nil)
+	request.AssertOK()
+	request.AssertContains("TLS")
 }
 
 func Test_NewWithRacy(t *testing.T) {

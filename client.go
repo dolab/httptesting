@@ -2,6 +2,8 @@ package httptesting
 
 import (
 	"bytes"
+	"crypto/tls"
+	"crypto/x509"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
@@ -51,6 +53,35 @@ func New(host string, isTLS bool) *Client {
 	}
 }
 
+// NewWithTLS returns an initialized *Client with custom certificate.
+func NewWithTLS(host string, cert *x509.Certificate) *Client {
+	jar, _ := cookiejar.New(nil)
+
+	// adjust host
+	if strings.HasPrefix(host, "http://") || strings.HasPrefix(host, "https://") {
+		urlobj, err := url.Parse(host)
+		if err == nil {
+			host = urlobj.Host
+		}
+	}
+
+	certPool := x509.NewCertPool()
+	certPool.AddCert(cert)
+
+	return &Client{
+		client: &http.Client{
+			Jar: jar,
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					RootCAs: certPool,
+				},
+			},
+		},
+		host:  host,
+		https: true,
+	}
+}
+
 // NewServer returns an initialized *Client along with mocked server for testing
 // NOTE: You MUST call client.Close() for cleanup after testing.
 func NewServer(handler http.Handler, isTLS bool) *Client {
@@ -71,6 +102,28 @@ func NewServer(handler http.Handler, isTLS bool) *Client {
 		client: client,
 		host:   urlobj.Host,
 		https:  isTLS,
+	}
+}
+
+// NewServerWithTLS returns an initialized *Client along with mocked server for testing
+// NOTE: You MUST call client.Close() for cleanup after testing.
+func NewServerWithTLS(handler http.Handler, cert tls.Certificate) *Client {
+	ts := httptest.NewUnstartedServer(handler)
+	ts.TLS = &tls.Config{
+		Certificates: []tls.Certificate{cert},
+	}
+	ts.StartTLS()
+
+	urlobj, _ := url.Parse(ts.URL)
+
+	client := ts.Client()
+	client.Jar, _ = cookiejar.New(nil)
+
+	return &Client{
+		ts:     ts,
+		client: client,
+		host:   urlobj.Host,
+		https:  true,
 	}
 }
 
