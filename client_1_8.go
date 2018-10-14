@@ -3,8 +3,9 @@
 package httptesting
 
 import (
-	"log"
 	"crypto/tls"
+	"crypto/x509"
+	"log"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
@@ -22,14 +23,15 @@ func NewServer(handler http.Handler, isTLS bool) *Client {
 	}
 
 	urlobj, _ := url.Parse(ts.URL)
+	jar, _ := cookiejar.New(nil)
 
 	return &Client{
-		ts:     ts,
-		client: client: &http.Client{
+		ts: ts,
+		client: &http.Client{
 			Jar: jar,
-		},,
-		host:   urlobj.Host,
-		https:  isTLS,
+		},
+		host:  urlobj.Host,
+		https: isTLS,
 	}
 }
 
@@ -48,13 +50,13 @@ func NewServerWithTLS(handler http.Handler, cert tls.Certificate) *Client {
 	ts.StartTLS()
 
 	urlobj, _ := url.Parse(ts.URL)
-	jar, _ = cookiejar.New(nil)
+	jar, _ := cookiejar.New(nil)
 
 	certPool := x509.NewCertPool()
 	certPool.AddCert(x509cert)
 
 	return &Client{
-		ts:     ts,
+		ts: ts,
 		client: &http.Client{
 			Jar: jar,
 			Transport: &http.Transport{
@@ -63,7 +65,7 @@ func NewServerWithTLS(handler http.Handler, cert tls.Certificate) *Client {
 				},
 			},
 		},
-		host:   urlobj.Host,
-		https:  true,
+		host:  urlobj.Host,
+		https: true,
 	}
 }
