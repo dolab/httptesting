@@ -10,8 +10,7 @@ import (
 	"sync"
 	"testing"
 
-	"./internal"
-
+	"github.com/dolab/httptesting/internal"
 	"github.com/golib/assert"
 )
 
