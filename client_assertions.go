@@ -15,6 +15,11 @@ func (c *Client) AssertOK() {
 	c.AssertStatus(http.StatusOK)
 }
 
+// AssertForbidden asserts that the response status code is 403.
+func (c *Client) AssertForbidden() {
+	c.AssertStatus(http.StatusForbidden)
+}
+
 // AssertNotFound asserts that the response status code is 404.
 func (c *Client) AssertNotFound() {
 	c.AssertStatus(http.StatusNotFound)
@@ -118,7 +123,7 @@ func (c *Client) AssertContainsJSON(key string, value interface{}) {
 			break
 		}
 
-		var i int64 = 0
+		var i int64
 		jsonparser.ArrayEach(buf, func(arrBuf []byte, arrType jsonparser.ValueType, arrOffset int, arrErr error) {
 			if i == n {
 				buf = arrBuf

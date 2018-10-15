@@ -1,8 +1,8 @@
 # httptesting
 
-[![CircleCI](https://circleci.com/gh/dolab/httptesting/tree/master.svg?style=svg)](https://circleci.com/gh/dolab/httptesting/tree/master) | [![Build Status](https://travis-ci.org/dolab/httptesting.svg?branch=master&style=flat)](https://travis-ci.org/dolab/httptesting)
+[![CircleCI](https://circleci.com/gh/dolab/httptesting/tree/master.svg?style=svg)](https://circleci.com/gh/dolab/httptesting/tree/master)
 
-HTTP testing client of golang for human.
+Golang HTTP testing client for human.
 
 ## Installation
 
@@ -13,7 +13,7 @@ $ go get github.com/dolab/httptesting
 ## Getting Started
 
 ```go
-package main
+package httptesting
 
 import (
 	"net/http"
@@ -22,11 +22,13 @@ import (
 	"github.com/dolab/httptesting"
 )
 
+// Serial mode
 func Test_Client(t *testing.T) {
 	host := "https://example.com"
 	client := httptesting.New(host, true)
 
-	client.Get("/")
+	client.Get(t, "/")
+	defer client.Close()
 
 	// verify http response status
 	client.AssertOK()
@@ -38,28 +40,29 @@ func Test_Client(t *testing.T) {
 	client.AssertNotEmpty()
 }
 
-func Test_ClientWithCustomRequest(t *testing.T) {
-	r, _ := http.NewRequest("HEAD", "https://example.com", nil)
-	r.Header.Add("X-Custom-Header", "custom-header")
+// Concurrency mode
+func Test_Request(t *testing.T) {
+	host := "https://example.com"
+	client := httptesting.New(host, true)
 
-	client := httptesting.New("", true)
-	client.NewRequest(r)
+	request := client.New(t)
+	request.Get("/")
 
 	// verify http response status
-	client.AssertOK()
+	request.AssertOK()
 
 	// verify http response header
-	client.AssertExistHeader("Content-Length")
+	request.AssertExistHeader("Content-Length")
 
 	// verify http response body
-	client.AssertEmpty()
+	request.AssertNotEmpty()
 }
 ```
 
-### Start with `httptest.Server`
+### Connected with `httptest.Server`
 
 ```go
-package main
+package httptesting
 
 import (
 	"net/http"
@@ -78,8 +81,7 @@ func (mock *mockServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	mock.assertion(w, r)
 }
 
-
-func Test_Client(t *testing.T) {
+func Test_Server_Client(t *testing.T) {
 	method := "GET"
 	uri := "/server/https"
 	server := &mockServer{
@@ -92,20 +94,21 @@ func Test_Client(t *testing.T) {
 		},
 	}
 
-	ts := NewServer(server, true)
+	// return default client connected with httptest.Server
+	ts := httptesting.NewServer(server, true)
 	defer ts.Close()
 
-	client := ts.New(t)
-	client.Get("/server/https")
+	request := ts.New(t)
+	request.Get("/server/https")
 
 	// verify http response status
-	client.AssertOK()
+	request.AssertOK()
 
 	// verify http response header
-	client.AssertExistHeader("Content-Length")
+	request.AssertExistHeader("Content-Length")
 
 	// verify http response body
-	client.AssertContains("TLS")
+	request.AssertContains("TLS")
 }
 ```
 
