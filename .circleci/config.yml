@@ -22,7 +22,7 @@ jobs:
     <<: *defaults
     docker:
       # specify the version
-      - image: circleci/golang:1.6
+      - image: golang:1.6
 
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
