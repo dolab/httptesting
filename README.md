@@ -1,6 +1,6 @@
 # httptesting
 
-[![Build Status](https://travis-ci.org/dolab/httptesting.svg?branch=master&style=flat)](https://travis-ci.org/dolab/httptesting)
+[![CircleCI](https://circleci.com/gh/dolab/httptesting/tree/master.svg?style=svg)](https://circleci.com/gh/dolab/httptesting/tree/master) | [![Build Status](https://travis-ci.org/dolab/httptesting.svg?branch=master&style=flat)](https://travis-ci.org/dolab/httptesting)
 
 HTTP testing client of golang for human.
 
@@ -16,43 +16,96 @@ $ go get github.com/dolab/httptesting
 package main
 
 import (
-    "net/http"
-    "testing"
+	"net/http"
+	"testing"
 
-    "github.com/dolab/httptesting"
+	"github.com/dolab/httptesting"
 )
 
 func Test_Client(t *testing.T) {
-    host := "https://example.com"
-    client := httptesting.New(host, true)
+	host := "https://example.com"
+	client := httptesting.New(host, true)
 
-    client.Get("/")
+	client.Get("/")
 
-    // verify http response status
-    client.AssertOK()
+	// verify http response status
+	client.AssertOK()
 
-    // verify http response header
-    client.AssertExistHeader("Content-Length")
+	// verify http response header
+	client.AssertExistHeader("Content-Length")
 
-    // verify http response body
-    client.AssertNotEmpty()
+	// verify http response body
+	client.AssertNotEmpty()
 }
 
 func Test_ClientWithCustomRequest(t *testing.T) {
-    r, _ := http.NewRequest("HEAD", "https://example.com", nil)
-    r.Header.Add("X-Custom-Header", "custom-header")
+	r, _ := http.NewRequest("HEAD", "https://example.com", nil)
+	r.Header.Add("X-Custom-Header", "custom-header")
 
-    client := httptesting.New("", true)
-    client.NewRequest(r)
+	client := httptesting.New("", true)
+	client.NewRequest(r)
 
-    // verify http response status
-    client.AssertOK()
+	// verify http response status
+	client.AssertOK()
 
-    // verify http response header
-    client.AssertExistHeader("Content-Length")
+	// verify http response header
+	client.AssertExistHeader("Content-Length")
 
-    // verify http response body
-    client.AssertEmpty()
+	// verify http response body
+	client.AssertEmpty()
+}
+```
+
+### Start with `httptest.Server`
+
+```go
+package main
+
+import (
+	"net/http"
+	"testing"
+
+	"github.com/dolab/httptesting"
+)
+
+type mockServer struct {
+	method	string
+	path	  string
+	assertion func(w http.ResponseWriter, r *http.Request)
+}
+
+func (mock *mockServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	mock.assertion(w, r)
+}
+
+
+func Test_Client(t *testing.T) {
+	method := "GET"
+	uri := "/server/https"
+	server := &mockServer{
+		method: method,
+		path: uri,
+		assertion: func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("x-request-method", r.Method)
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("TLS"))
+		},
+	}
+
+	ts := NewServer(server, true)
+	defer ts.Close()
+
+	client := ts.New(t)
+	client.Get("/server/https")
+
+	// verify http response status
+	client.AssertOK()
+
+	// verify http response header
+	client.AssertExistHeader("Content-Length")
+
+	// verify http response body
+	client.AssertContains("TLS")
 }
 ```
 
@@ -66,61 +119,61 @@ import (
 )
 
 func Test_Request(t *testing.T) {
-    host := "https://example.com"
-    client := httptesting.New(host, true)
+	host := "https://example.com"
+	client := httptesting.New(host, true)
 
-    t.Run("GET /api/json", func(t *testing.T) {
-        request := client.New(t)
-        request.WithHeader("X-Mock-Client", "httptesting")
+	t.Run("GET /api/json", func(t *testing.T) {
+		request := client.New(t)
+		request.WithHeader("X-Mock-Client", "httptesting")
 
-        // assume server response with following json data:
-        // {"user":{"name":"httptesting","age":3},"addresses":[{"name":"china"},{"name":"USA"}]}
-        request.GetJSON("/api/json", nil)
+		// assume server response with following json data:
+		// {"user":{"name":"httptesting","age":3},"addresses":[{"name":"china"},{"name":"USA"}]}
+		request.GetJSON("/api/json", nil)
 
-        // verify http response status
-        request.AssertOK()
+		// verify http response status
+		request.AssertOK()
 
-        // verify http response header
-        request.AssertHeader("X-Mock-Client", "httptesting")
+		// verify http response header
+		request.AssertHeader("X-Mock-Client", "httptesting")
 
-        // verify http response body with json format
-        request.AssertContainsJSON("user.name", "httptesting")
+		// verify http response body with json format
+		request.AssertContainsJSON("user.name", "httptesting")
 
-        // for array
-        request.AssertContainsJSON("addresses.1.name", "USA")
-        request.AssertNotContainsJSON("addresses.2.name")
+		// for array
+		request.AssertContainsJSON("addresses.1.name", "USA")
+		request.AssertNotContainsJSON("addresses.2.name")
 
-        // use regexp for custom matcher
-        request.AssertMatch("user.*")
-    })
+		// use regexp for custom matcher
+		request.AssertMatch("user.*")
+	})
 
-    t.Run("POST /api/json", func(t *testing.T) {
-        request := client.New(t)
-        request.WithHeader("X-Mock-Client", "httptesting")
+	t.Run("POST /api/json", func(t *testing.T) {
+		request := client.New(t)
+		request.WithHeader("X-Mock-Client", "httptesting")
 
-        payload := struct {
-            Name string `json:"name"`
-            Age  int    `json:"age"`
-        }{"httptesting", 3}
+		payload := struct {
+			Name string `json:"name"`
+			Age  int	`json:"age"`
+		}{"httptesting", 3}
 
-        // assume server response with following json data:
-        // {"data":{"name":"httptesting","age":3},"success":true}
-        request.PostJSON("/api/json", payload)
+		// assume server response with following json data:
+		// {"data":{"name":"httptesting","age":3},"success":true}
+		request.PostJSON("/api/json", payload)
 
-        // verify http response status
-        request.AssertOK()
+		// verify http response status
+		request.AssertOK()
 
-        // verify http response header
-        request.AssertHeader("X-Mock-Client", "httptesting")
+		// verify http response header
+		request.AssertHeader("X-Mock-Client", "httptesting")
 
-        // verify http response body with json format
-        request.AssertContainsJSON("data.name", "httptesting")
-        request.AssertContainsJSON("data.age", 3)
-        request.AssertContainsJSON("success", true)
+		// verify http response body with json format
+		request.AssertContainsJSON("data.name", "httptesting")
+		request.AssertContainsJSON("data.age", 3)
+		request.AssertContainsJSON("success", true)
 
-        // use regexp for custom matcher
-        request.AssertNotMatch("user.*")
-    })
+		// use regexp for custom matcher
+		request.AssertNotMatch("user.*")
+	})
 }
 ```
 
