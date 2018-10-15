@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 
 	"golang.org/x/net/websocket"
@@ -24,9 +25,11 @@ type Client struct {
 	Response     *http.Response
 	ResponseBody []byte
 
-	ts     *httptest.Server
+	t   *testing.T
+	ts  *httptest.Server
+	mux sync.RWMutex
+
 	client *http.Client
-	t      *testing.T
 	host   string
 	https  bool
 }
@@ -134,6 +137,8 @@ func (c *Client) New(t *testing.T) *Request {
 // If successful, the caller may examine the Response and ResponseBody properties.
 // NOTE: You have to manage session / cookie data manually.
 func (c *Client) NewRequest(t *testing.T, request *http.Request) {
+	c.mux.Lock()
+
 	c.t = t
 
 	var err error
@@ -276,11 +281,19 @@ func (c *Client) NewWebsocket(t *testing.T, path string) *websocket.Conn {
 	return ws
 }
 
-// Close tryes to close *httptest.Server created by NewServer()
+// Close tries to
+//  - close *httptest.Server created by NewServer()
+//  - release lock of previous request if existed
 func (c *Client) Close() {
-	if c.ts == nil {
-		return
-	}
+	defer func() {
+		if c.t != nil {
+			c.mux.Unlock()
+			c.t = nil
+		}
+	}()
 
-	c.ts.Close()
+	if c.ts != nil {
+		c.ts.Close()
+		c.ts = nil
+	}
 }
