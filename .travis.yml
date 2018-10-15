@@ -1,8 +1,13 @@
 language: go
 
+go:
+  - master
+
 before_script:
   - go get -v github.com/golib/assert
   - go get -v github.com/buger/jsonparser
+
+script: go test -race
 
 jobs:
   fast_finish: true
