@@ -31,7 +31,7 @@ func NewServer(handler http.Handler, isTLS bool) *Testing {
 		ts = httptest.NewTLSServer(handler)
 
 		certs = x509.NewCertPool()
-		certs.AddCert(x509cert)
+		certs.AddCert(cert)
 	} else {
 		ts = httptest.NewServer(handler)
 	}

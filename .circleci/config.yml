@@ -68,7 +68,7 @@ workflows:
   version: 2
   build_and_test:
     jobs:
-      - go1.6
+      #- go1.6
       - go1.8
       - go1.11
       - go
