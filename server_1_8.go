@@ -15,9 +15,9 @@ import (
 	"github.com/dolab/httptesting/internal"
 )
 
-// NewServer returns an initialized *Testing along with mocked server for testing
+// NewServer returns an initialized *Client along with mocked server for testing
 // NOTE: You MUST call client.Close() for cleanup after testing.
-func NewServer(handler http.Handler, isTLS bool) *Testing {
+func NewServer(handler http.Handler, isTLS bool) *Client {
 	var (
 		ts    *httptest.Server
 		certs *x509.CertPool
@@ -51,7 +51,7 @@ func NewServer(handler http.Handler, isTLS bool) *Testing {
 		panic(err.Error())
 	}
 
-	return &Testing{
+	return &Client{
 		server: ts,
 		host:   urlobj.Host,
 		certs:  certs,
@@ -60,9 +60,9 @@ func NewServer(handler http.Handler, isTLS bool) *Testing {
 	}
 }
 
-// NewServerWithTLS returns an initialized *Testing along with mocked server for testing
+// NewServerWithTLS returns an initialized *Client along with mocked server for testing
 // NOTE: You MUST call client.Close() for cleanup after testing.
-func NewServerWithTLS(handler http.Handler, cert tls.Certificate) *Testing {
+func NewServerWithTLS(handler http.Handler, cert tls.Certificate) *Client {
 	x509cert, err := x509.ParseCertificate(cert.Certificate[0])
 	if err != nil {
 		log.Fatal(err)
@@ -87,7 +87,7 @@ func NewServerWithTLS(handler http.Handler, cert tls.Certificate) *Testing {
 		panic(err.Error())
 	}
 
-	return &Testing{
+	return &Client{
 		server: ts,
 		host:   urlobj.Host,
 		certs:  certs,

@@ -12,7 +12,7 @@ import (
 
 // Request defines http client for human usage.
 type Request struct {
-	*Testing
+	*Client
 
 	Response     *http.Response
 	ResponseBody []byte
@@ -22,11 +22,11 @@ type Request struct {
 	header  http.Header
 }
 
-// NewRequest returns a new *Request with *Testing
-func NewRequest(t *testing.T, httpt *Testing) *Request {
+// NewRequest returns a new *Request with *Client
+func NewRequest(t *testing.T, httpt *Client) *Request {
 
 	return &Request{
-		Testing: httpt,
+		Client:  httpt,
 		t:       t,
 		cookies: []*http.Cookie{},
 		header:  http.Header{},

@@ -18,14 +18,14 @@ func TestRequest(t *testing.T) {
 		it.Equal("/request/client", r.RequestURI)
 
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(r.Header.Get("X-Mock-Testing")))
+		w.Write([]byte(r.Header.Get("X-Mock-Client")))
 	})
 
 	ts := httptest.NewServer(server)
 	defer ts.Close()
 
 	request := New(ts.URL, false).New(t)
-	request.WithHeader("X-Mock-Testing", "httptesting")
+	request.WithHeader("X-Mock-Client", "httptesting")
 
 	request.Get("/request/client", nil)
 	request.AssertOK()
