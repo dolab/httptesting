@@ -11,9 +11,9 @@ import (
 	"net/url"
 )
 
-// NewServer returns an initialized *Testing along with mocked server for testing
+// NewServer returns an initialized *Client along with mocked server for testing
 // NOTE: You MUST call client.Close() for cleanup after testing.
-func NewServer(handler http.Handler, isTLS bool) *Testing {
+func NewServer(handler http.Handler, isTLS bool) *Client {
 	var (
 		ts    *httptest.Server
 		certs *x509.CertPool
@@ -38,7 +38,7 @@ func NewServer(handler http.Handler, isTLS bool) *Testing {
 		panic(err.Error())
 	}
 
-	return &Testing{
+	return &Client{
 		server: ts,
 		host:   urlobj.Host,
 		certs:  certs,
@@ -47,9 +47,9 @@ func NewServer(handler http.Handler, isTLS bool) *Testing {
 	}
 }
 
-// NewServerWithTLS returns an initialized *Testing along with mocked server for testing
+// NewServerWithTLS returns an initialized *Client along with mocked server for testing
 // NOTE: You MUST call client.Close() for cleanup after testing.
-func NewServerWithTLS(handler http.Handler, cert tls.Certificate) *Testing {
+func NewServerWithTLS(handler http.Handler, cert tls.Certificate) *Client {
 	ts := httptest.NewUnstartedServer(handler)
 	ts.TLS = &tls.Config{
 		Certificates: []tls.Certificate{cert},
@@ -71,7 +71,7 @@ func NewServerWithTLS(handler http.Handler, cert tls.Certificate) *Testing {
 		certs = transport.TLSClientConfig.RootCAs
 	}
 
-	return &Testing{
+	return &Client{
 		server: ts,
 		host:   urlobj.Host,
 		certs:  certs,

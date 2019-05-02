@@ -93,7 +93,7 @@ func TestTesting_New(t *testing.T) {
 	client := New(host, true)
 
 	request := client.New(t)
-	it.Equal(client, request.Testing)
+	it.Equal(client, request.Client)
 	it.NotNil(request.t)
 	it.Nil(request.Response)
 	it.Empty(request.ResponseBody)
