@@ -30,8 +30,13 @@ func NewServer(handler http.Handler, isTLS bool) *Testing {
 
 		ts = httptest.NewTLSServer(handler)
 
+		x509cert, err := x509.ParseCertificate(cert.Certificate[0])
+		if err != nil {
+			panic(fmt.Sprintf("httptesting: NewTLSServer: %v", err))
+		}
+
 		certs = x509.NewCertPool()
-		certs.AddCert(cert)
+		certs.AddCert(x509cert)
 	} else {
 		ts = httptest.NewServer(handler)
 	}
