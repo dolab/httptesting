@@ -16,6 +16,7 @@ default_steps: &default_steps
     - run: go get -v golang.org/x/net/websocket
     - run: go get -v github.com/golib/assert
     - run: go get -v github.com/buger/jsonparser
+    - run: go test -v
     - run: go test -v -race
 jobs:
   go1.6:
@@ -67,7 +68,7 @@ workflows:
   version: 2
   build_and_test:
     jobs:
-      - go1.6
+      #- go1.6
       - go1.8
       - go1.11
       - go

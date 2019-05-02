@@ -1,36 +1,44 @@
 package httptesting
 
 import (
+	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"net"
 	"net/http"
 	"time"
 )
 
-// TransportFilter is a callback for http request injection.
-type TransportFilter func(r *http.Request) error
+// RequestFilter is a callback for http request injection.
+type RequestFilter func(r *http.Request) error
 
-type transport struct {
-	callee TransportFilter
+// FilterTransport defines a custom http.Transport with filters and certs.
+type FilterTransport struct {
+	filters []RequestFilter
+	certs   []*x509.CertPool
 }
 
-func newTransport(filter TransportFilter) *transport {
-	return &transport{
-		callee: filter,
+func NewFilterTransport(filters []RequestFilter, certs ...*x509.CertPool) *FilterTransport {
+	return &FilterTransport{
+		filters: filters,
+		certs:   certs,
 	}
 }
 
-func (caller *transport) RoundTrip(r *http.Request) (*http.Response, error) {
-	transport := &http.Transport{
+func (transport *FilterTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+	tr := &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
-		Dial: func(network, address string) (net.Conn, error) {
-			// invoke callee
-			err := caller.callee(r)
-			if err != nil {
-				return nil, err
+		DialContext: func(ctx context.Context, network, address string) (net.Conn, error) {
+			// invoke filters
+			for _, filter := range transport.filters {
+				err := filter(r)
+				if err != nil {
+					return nil, err
+				}
 			}
 
 			dialer := &net.Dialer{
-				Timeout:   30 * time.Second,
+				Timeout:   10 * time.Second,
 				KeepAlive: 30 * time.Second,
 			}
 
@@ -41,8 +49,15 @@ func (caller *transport) RoundTrip(r *http.Request) (*http.Response, error) {
 
 			return conn, nil
 		},
-		TLSHandshakeTimeout: 10 * time.Second,
+		ResponseHeaderTimeout: 3 * time.Second,
 	}
 
-	return transport.RoundTrip(r)
+	if len(transport.certs) > 0 {
+		tr.TLSClientConfig = &tls.Config{
+			RootCAs: transport.certs[0],
+		}
+		tr.TLSHandshakeTimeout = 5 * time.Second
+	}
+
+	return tr.RoundTrip(r)
 }

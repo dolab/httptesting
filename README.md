@@ -22,25 +22,7 @@ import (
 	"github.com/dolab/httptesting"
 )
 
-// Serial mode
-func Test_Client(t *testing.T) {
-	host := "https://example.com"
-	client := httptesting.New(host, true)
-
-	client.Get(t, "/")
-	defer client.Close()
-
-	// verify http response status
-	client.AssertOK()
-
-	// verify http response header
-	client.AssertExistHeader("Content-Length")
-
-	// verify http response body
-	client.AssertNotEmpty()
-}
-
-// Concurrency mode
+// Testing with httptesting.Request
 func Test_Request(t *testing.T) {
 	host := "https://example.com"
 	client := httptesting.New(host, true)
@@ -49,13 +31,13 @@ func Test_Request(t *testing.T) {
 	request.Get("/")
 
 	// verify http response status
-	request.AssertOK()
+	if request.AssertOK() {
+	    // verify http response header
+	    request.AssertExistHeader("Content-Length")
 
-	// verify http response header
-	request.AssertExistHeader("Content-Length")
-
-	// verify http response body
-	request.AssertNotEmpty()
+	    // verify http response body
+	    request.AssertNotEmpty()
+	}
 }
 ```
 
@@ -81,7 +63,7 @@ func (mock *mockServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	mock.assertion(w, r)
 }
 
-func Test_Server_Client(t *testing.T) {
+func Test_Server(t *testing.T) {
 	method := "GET"
 	uri := "/server/https"
 	server := &mockServer{
@@ -89,6 +71,7 @@ func Test_Server_Client(t *testing.T) {
 		path: uri,
 		assertion: func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("x-request-method", r.Method)
+
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte("TLS"))
 		},
@@ -102,13 +85,13 @@ func Test_Server_Client(t *testing.T) {
 	request.Get("/server/https")
 
 	// verify http response status
-	request.AssertOK()
+	if request.AssertOK() {
+	    // verify http response header
+	    request.AssertExistHeader("Content-Length")
 
-	// verify http response header
-	request.AssertExistHeader("Content-Length")
-
-	// verify http response body
-	request.AssertContains("TLS")
+	    // verify http response body
+	    request.AssertContains("TLS")
+	}
 }
 ```
 
@@ -134,20 +117,20 @@ func Test_Request(t *testing.T) {
 		request.GetJSON("/api/json", nil)
 
 		// verify http response status
-		request.AssertOK()
+		if request.AssertOK() {
+		    // verify http response header
+		    request.AssertHeader("X-Mock-Client", "httptesting")
 
-		// verify http response header
-		request.AssertHeader("X-Mock-Client", "httptesting")
+		    // verify http response body with json format
+		    request.AssertContainsJSON("user.name", "httptesting")
 
-		// verify http response body with json format
-		request.AssertContainsJSON("user.name", "httptesting")
+		    // for array
+		    request.AssertContainsJSON("addresses.1.name", "USA")
+		    request.AssertNotContainsJSON("addresses.2.name")
 
-		// for array
-		request.AssertContainsJSON("addresses.1.name", "USA")
-		request.AssertNotContainsJSON("addresses.2.name")
-
-		// use regexp for custom matcher
-		request.AssertMatch("user.*")
+		    // use regexp for custom matcher
+		    request.AssertMatch("user.*")
+		}
 	})
 
 	t.Run("POST /api/json", func(t *testing.T) {
@@ -164,18 +147,18 @@ func Test_Request(t *testing.T) {
 		request.PostJSON("/api/json", payload)
 
 		// verify http response status
-		request.AssertOK()
+		if request.AssertOK() {
+		    // verify http response header
+		    request.AssertHeader("X-Mock-Client", "httptesting")
 
-		// verify http response header
-		request.AssertHeader("X-Mock-Client", "httptesting")
+		    // verify http response body with json format
+		    request.AssertContainsJSON("data.name", "httptesting")
+		    request.AssertContainsJSON("data.age", 3)
+		    request.AssertContainsJSON("success", true)
 
-		// verify http response body with json format
-		request.AssertContainsJSON("data.name", "httptesting")
-		request.AssertContainsJSON("data.age", 3)
-		request.AssertContainsJSON("success", true)
-
-		// use regexp for custom matcher
-		request.AssertNotMatch("user.*")
+		    // use regexp for custom matcher
+		    request.AssertNotMatch("user.*")
+		}
 	})
 }
 ```
