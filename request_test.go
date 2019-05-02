@@ -8,27 +8,26 @@ import (
 	"github.com/golib/assert"
 )
 
-func Test_Request(t *testing.T) {
-	assertion := assert.New(t)
+func TestRequest(t *testing.T) {
+	it := assert.New(t)
 	method := "GET"
 	uri := "/request/client"
+
 	server := newMockServer(method, uri, func(w http.ResponseWriter, r *http.Request) {
-		assertion.Equal(method, r.Method)
-		assertion.Equal("/request/client", r.RequestURI)
+		it.Equal(method, r.Method)
+		it.Equal("/request/client", r.RequestURI)
 
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(r.Header.Get("X-Mock-Client")))
+		w.Write([]byte(r.Header.Get("X-Mock-Testing")))
 	})
 
 	ts := httptest.NewServer(server)
 	defer ts.Close()
 
-	client := New(ts.URL, false)
+	request := New(ts.URL, false).New(t)
+	request.WithHeader("X-Mock-Testing", "httptesting")
 
-	rclient := client.New(t)
-	rclient.WithHeader("X-Mock-Client", "httptesting")
-
-	rclient.Get("/request/client", nil)
-	rclient.AssertOK()
-	rclient.AssertContains("httptesting")
+	request.Get("/request/client", nil)
+	request.AssertOK()
+	request.AssertContains("httptesting")
 }
