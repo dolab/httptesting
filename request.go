@@ -7,6 +7,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"sync"
 	"testing"
 )
 
@@ -17,16 +18,16 @@ type Request struct {
 	Response     *http.Response
 	ResponseBody []byte
 
+	mux     sync.Mutex
 	t       *testing.T
 	cookies []*http.Cookie
 	header  http.Header
 }
 
 // NewRequest returns a new *Request with *Client
-func NewRequest(t *testing.T, httpt *Client) *Request {
-
+func NewRequest(t *testing.T, client *Client) *Request {
 	return &Request{
-		Client:  httpt,
+		Client:  client,
 		t:       t,
 		cookies: []*http.Cookie{},
 		header:  http.Header{},
