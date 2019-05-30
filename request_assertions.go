@@ -84,12 +84,12 @@ func (r *Request) AssertNotExistHeader(name string) bool {
 
 // AssertEmpty asserts that the response body is empty.
 func (r *Request) AssertEmpty() bool {
-	return assert.Empty(r.t, r.ResponseBody)
+	return assert.Empty(r.t, string(r.ResponseBody))
 }
 
 // AssertNotEmpty asserts that the response body is not empty.
 func (r *Request) AssertNotEmpty() bool {
-	return assert.NotEmpty(r.t, r.ResponseBody)
+	return assert.NotEmpty(r.t, string(r.ResponseBody))
 }
 
 // AssertContains asserts that the response body contains the string.
