@@ -2,7 +2,7 @@ package httptesting
 
 import (
 	"encoding/xml"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -183,7 +183,7 @@ func TestRequest_PutJSON(t *testing.T) {
 		it.True(ok)
 		it.Empty(r.FormValue("key"))
 
-		b, err := ioutil.ReadAll(r.Body)
+		b, err := io.ReadAll(r.Body)
 		r.Body.Close()
 		it.Nil(err)
 		it.Equal(`{"name":"testing","age":1,"married":false}`, string(b))
@@ -228,7 +228,7 @@ func TestRequest_PutXML(t *testing.T) {
 		it.True(ok)
 		it.Empty(r.FormValue("key"))
 
-		b, err := ioutil.ReadAll(r.Body)
+		b, err := io.ReadAll(r.Body)
 		r.Body.Close()
 		it.Nil(err)
 		it.Equal(`<Person><Name>testing</Name><Age>1</Age><Married>false</Married></Person>`, string(b))
@@ -296,7 +296,7 @@ func TestRequest_PostJSON(t *testing.T) {
 		it.True(ok)
 		it.Empty(r.FormValue("key"))
 
-		b, err := ioutil.ReadAll(r.Body)
+		b, err := io.ReadAll(r.Body)
 		r.Body.Close()
 		it.Nil(err)
 		it.Equal(`{"name":"testing","age":1,"married":false}`, string(b))
@@ -341,7 +341,7 @@ func TestRequest_PostXML(t *testing.T) {
 		it.True(ok)
 		it.Empty(r.FormValue("key"))
 
-		b, err := ioutil.ReadAll(r.Body)
+		b, err := io.ReadAll(r.Body)
 		r.Body.Close()
 		it.Nil(err)
 		it.Equal(`<Person><Name>testing</Name><Age>1</Age><Married>false</Married></Person>`, string(b))
@@ -409,7 +409,7 @@ func TestRequest_PatchJSON(t *testing.T) {
 		it.True(ok)
 		it.Empty(r.FormValue("key"))
 
-		b, err := ioutil.ReadAll(r.Body)
+		b, err := io.ReadAll(r.Body)
 		r.Body.Close()
 		it.Nil(err)
 		it.Equal(`{"name":"testing","age":1,"married":false}`, string(b))
@@ -454,7 +454,7 @@ func TestRequest_PatchXML(t *testing.T) {
 		it.True(ok)
 		it.Empty(r.FormValue("key"))
 
-		b, err := ioutil.ReadAll(r.Body)
+		b, err := io.ReadAll(r.Body)
 		r.Body.Close()
 		it.Nil(err)
 		it.Equal(`<Person><Name>testing</Name><Age>1</Age><Married>false</Married></Person>`, string(b))
@@ -489,7 +489,7 @@ func TestRequest_DeleteForm(t *testing.T) {
 		it.True(ok)
 		it.Empty(r.FormValue("key"))
 
-		b, err := ioutil.ReadAll(r.Body)
+		b, err := io.ReadAll(r.Body)
 		r.Body.Close()
 		it.Nil(err)
 		it.Equal(`form-key=form-value`, string(b))
@@ -527,7 +527,7 @@ func TestRequest_DeleteJSON(t *testing.T) {
 		it.True(ok)
 		it.Empty(r.FormValue("key"))
 
-		b, err := ioutil.ReadAll(r.Body)
+		b, err := io.ReadAll(r.Body)
 		r.Body.Close()
 		it.Nil(err)
 		it.Equal(`{"name":"testing","age":1,"married":false}`, string(b))
@@ -572,7 +572,7 @@ func TestRequest_DeleteXML(t *testing.T) {
 		it.True(ok)
 		it.Empty(r.FormValue("key"))
 
-		b, err := ioutil.ReadAll(r.Body)
+		b, err := io.ReadAll(r.Body)
 		r.Body.Close()
 		it.Nil(err)
 		it.Equal(`<Person><Name>testing</Name><Age>1</Age><Married>false</Married></Person>`, string(b))

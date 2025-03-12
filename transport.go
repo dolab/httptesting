@@ -54,7 +54,8 @@ func (transport *FilterTransport) RoundTrip(r *http.Request) (*http.Response, er
 
 	if len(transport.certs) > 0 {
 		tr.TLSClientConfig = &tls.Config{
-			RootCAs: transport.certs[0],
+			RootCAs:            transport.certs[0],
+			InsecureSkipVerify: true,
 		}
 		tr.TLSHandshakeTimeout = 5 * time.Second
 	}

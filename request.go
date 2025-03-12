@@ -3,7 +3,6 @@ package httptesting
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -58,7 +57,7 @@ func (r *Request) WithHttpHeader(header http.Header) *Request {
 	return r
 }
 
-// WithCookie sets jar for client by replace for the request
+// WithCookies sets jar for client by replace for the request
 func (r *Request) WithCookies(cookies []*http.Cookie) *Request {
 	r.mux.Lock()
 	defer r.mux.Unlock()
@@ -79,7 +78,7 @@ func (r *Request) NewRequest(request *http.Request, filters ...RequestFilter) {
 
 	r.Response, err = r.NewClient(filters...).Do(request)
 	if err != nil {
-		r.t.Fatalf("httptesting: NewRequest:%s %s: %v\n", request.Method, request.URL.RequestURI(), err)
+		r.t.Fatalf("httptesting: %v\n", err)
 	}
 	defer r.Response.Body.Close()
 
@@ -91,7 +90,7 @@ func (r *Request) NewRequest(request *http.Request, filters ...RequestFilter) {
 		// ignore
 
 	default:
-		r.ResponseBody, err = ioutil.ReadAll(r.Response.Body)
+		r.ResponseBody, err = io.ReadAll(r.Response.Body)
 		if err != nil {
 			if err != io.EOF {
 				r.t.Fatalf("httptesting: NewRequest:%s %s: %v\n", request.Method, request.URL.RequestURI(), err)
@@ -138,9 +137,6 @@ func (r *Request) NewMultipartRequest(method, path, filename string, file interf
 	)
 	switch f := file.(type) {
 	case io.Reader:
-		reader = f
-
-	case *os.File:
 		reader = f
 
 	case string:
