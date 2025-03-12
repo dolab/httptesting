@@ -168,7 +168,7 @@ func (c *Client) NewWebsocket(t *testing.T, path string) *websocket.Conn {
 	return ws
 }
 
-// New returns a *Request which has more customization!
+// NewRequest returns a *Request which has more customization!
 func (c *Client) NewRequest(t *testing.T) *Request {
 	return NewRequest(t, c)
 }
@@ -180,7 +180,7 @@ func (c *Client) New(t *testing.T) *Request {
 
 // Close tries to
 //
-//  - close *httptest.Server created by NewServer or NewServerWithTLS
+//   - close *httptest.Server created by NewServer or NewServerWithTLS
 func (c *Client) Close() {
 	c.mux.Lock()
 	defer c.mux.Unlock()
@@ -189,6 +189,4 @@ func (c *Client) Close() {
 		c.server.Close()
 		c.server = nil
 	}
-
-	return
 }
